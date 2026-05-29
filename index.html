@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>单词接龙</title>
+    <style>
+        /* 全局与基础 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+        }
+        body {
+            background: #8dfa9c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            width: min(96vw, 96vh * 1.777);
+            max-width: 1280px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        /* 页面切换 */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 24px 30px;
+            display: flex;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.98);
+        }
+        .page.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* 通用控件 */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: #000;
+            background: transparent;
+            border: none;
+            z-index: 30;
+        }
+        .back-btn span {
+            font-size: 22px;
+        }
+
+        /* ---- 首页 ---- */
+        #homePage {
+            justify-content: center;
+            align-items: center;
+            background: #ffffff;
+        }
+        .home-left {
+            flex: 1.1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .home-logo {
+            max-width: 80%;
+            object-fit: contain;
+        }
+        .home-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 30px;
+            padding-right: 30px;
+        }
+        .menu-btn {
+            background: #3bc935;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 16px 28px;
+            border: none;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 6px 0 #2a8e25;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-align: left;
+            min-height: 80px;
+        }
+        .menu-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2a8e25;
+        }
+        .menu-btn img {
+            width: 50px;
+            height: 50px;
+            background: white;
+            padding: 6px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+        .home-bottom-icons {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            display: flex;
+            gap: 16px;
+        }
+        .home-bottom-icons img {
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .home-bottom-icons img:active {
+            transform: scale(0.85);
+        }
+
+        /* ---- 模式选择 ---- */
+        #modePage {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-grid {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            width: 90%;
+        }
+        .mode-card {
+            flex: 1;
+            background: #3bc935;
+            border-radius: 16px;
+            padding: 30px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            aspect-ratio: 1 / 1.2;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 8px 0 #1f7a1b;
+        }
+        .mode-card:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #1f7a1b;
+        }
+        .mode-card img {
+            width: 55%;
+            height: auto;
+            background: transparent;
+            object-fit: contain;
+        }
+        .mode-card .label {
+            background: white;
+            width: 90%;
+            padding: 12px 0;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* ---- 游戏界面 ---- */
+        #gamePage {
+            padding: 0;
+            background: #ffffff;
+            border-radius: 24px;
+            flex-direction: row;
+        }
+        .game-left-panel {
+            flex: 1;
+            border-right: 4px solid #3bc935;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .game-left-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #3bc935;
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 0;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .game-left-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+            background: white;
+        }
+        .game-left-body {
+            flex: 1;
+            background: #f1f1f1;
+            padding: 20px;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .word-card {
+            background: #dedede;
+            padding: 30px 20px;
+            border-radius: 16px;
+            width: 100%;
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-right-panel {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .game-right-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #3bc935;
+            padding: 6px 16px;
+            border-radius: 12px 12px 0 0;
+            color: white;
+            font-weight: bold;
+            font-size: 22px;
+            min-height: 60px;
+        }
+        .timer-area {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+        .timer-area img {
+            width: 36px;
+            height: 36px;
+        }
+        .game-right-input {
+            background: #eaeaea;
+            padding: 16px;
+            border-radius: 0 0 12px 12px;
+            min-height: 60px;
+            font-size: 28px;
+            letter-spacing: 2px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .game-keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+        }
+        .kb-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .kb-key {
+            flex: 1;
+            max-width: 52px;
+            aspect-ratio: 1 / 1.2;
+            background: #f7f7f7;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 22px;
+            cursor: pointer;
+            transition: 0.08s linear;
+            box-shadow: 0 4px 0 #ccc;
+            color: #000;
+        }
+        .kb-key:active {
+            transform: scale(0.92);
+            box-shadow: 0 1px 0 #ccc;
+        }
+        .kb-key.special {
+            background: #3bc935;
+            border-color: #1f7a1b;
+            box-shadow: 0 4px 0 #1f7a1b;
+            color: white;
+        }
+        .kb-key.special:active {
+            box-shadow: 0 1px 0 #1f7a1b;
+        }
+        .kb-key.empty {
+            visibility: hidden;
+        }
+
+        /* 遮罩 & 模态框 */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.25s;
+            border-radius: 24px;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 40px;
+            max-width: 500px;
+            width: 85%;
+            max-height: 70%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transform: scale(0.9);
+            transition: 0.25s;
+        }
+        .modal-overlay.show .modal-box {
+            transform: scale(1);
+        }
+        .modal-box h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .modal-box .close-modal {
+            position: absolute;
+            top: 12px;
+            right: 20px;
+            font-size: 32px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .history-scroll {
+            overflow-y: auto;
+            max-height: 300px;
+            padding-right: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .history-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: #3bc935;
+            border-radius: 10px;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f1f1f1;
+            padding: 6px 12px;
+            border-radius: 30px;
+        }
+        .history-item img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        .loading-mask {
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* 游戏内时钟按钮 */
+        .clock-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 10px;
+            border-radius: 30px;
+            transition: 0.15s;
+        }
+        .clock-btn:active {
+            transform: scale(0.9);
+        }
+        .clock-btn img {
+            width: 36px;
+            height: 36px;
+        }
+
+        /* 蓝牙连接 */
+        .bluetooth-panel {
+            padding: 24px;
+            text-align: center;
+        }
+        .bluetooth-panel img {
+            width: 80px;
+            margin: 20px 0;
+        }
+
+        /* 打字特效 */
+        .type-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 32px;
+            background: #3bc935;
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* 响应式/16:9 */
+        @media (max-width: 768px) {
+            .home-right { padding-right: 6px; }
+            .menu-btn { font-size: 20px; padding: 12px 16px; min-height: 60px; }
+            .menu-btn img { width: 36px; height: 36px; }
+            .home-logo { max-width: 90%; }
+            .mode-grid { gap: 12px; width: 98%; }
+            .mode-card .label { font-size: 14px; }
+            .word-card { font-size: 32px; min-height: 80px; }
+            .game-right-input { font-size: 22px; }
+            .kb-key { max-width: 32px; font-size: 16px; }
+            .game-left-header { font-size: 18px; }
+        }
+        @media (max-height: 500px) {
+            .game-container { width: 98vw; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="appContainer">
+
+    <!-- 首页 -->
+    <div id="homePage" class="page active">
+        <div class="home-left">
+            <img src="https://xiaoye6661234.github.io/WordTest/Logo.png" class="home-logo" alt="Logo">
+        </div>
+        <div class="home-right">
+            <button class="menu-btn" id="btnBasic">
+                <img src="https://xiaoye6661234.github.io/WordTest/Test.png" alt="Icon"> 基础训练
+            </button>
+            <button class="menu-btn" id="btnTimer">
+                <img src="https://xiaoye6661234.github.io/WordTest/Timer.png" alt="Icon"> 定时训练
+            </button>
+        </div>
+        <div class="home-bottom-icons">
+            <img src="https://xiaoye6661234.github.io/WordTest/Announcement.png" alt="公告" id="btnNotice">
+            <img src="https://xiaoye6661234.github.io/WordTest/Information.png" alt="信息" id="btnInfo">
+        </div>
+    </div>
+
+    <!-- 模式选择 -->
+    <div id="modePage" class="page">
+        <button class="back-btn" id="backFromMode"><span>←</span>返回</button>
+        <div class="mode-grid">
+            <div class="mode-card" data-mode="ai">
+                <img src="https://xiaoye6661234.github.io/WordTest/AI.png" alt="AI">
+                <div class="label">和AI竞赛</div>
+            </div>
+            <div class="mode-card" data-mode="bluetooth">
+                <img src="https://xiaoye6661234.github.io/WordTest/BlueTooth.png" alt="BT">
+                <div class="label">连接蓝牙联机游玩</div>
+            </div>
+            <div class="mode-card" data-mode="solo">
+                <img src="https://xiaoye6661234.github.io/WordTest/OnePerson.png" alt="Solo">
+                <div class="label">单人模式</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏页 -->
+    <div id="gamePage" class="page">
+        <button class="back-btn" id="backFromGame" style="z-index:50;"><span>←</span>返回</button>
+
+        <!-- 左侧：对手 -->
+        <div class="game-left-panel">
+            <div class="game-left-header" id="opponentHeader">
+                <img id="oppAvatar" src="https://xiaoye6661234.github.io/WordTest/默认avatar.jpg" alt="Avatar">
+                <span id="oppName">AI</span>
+            </div>
+            <div class="game-left-body" id="oppBody">
+                <div style="font-size:18px; margin-bottom:12px;" id="oppStatus">让我看看什么单词还没有出现...</div>
+                <div class="word-card" id="oppWordCard">good</div>
+                <div style="font-size:18px; margin-top:12px;" id="oppFooter">到你了！</div>
+                <!-- 加载遮罩 -->
+                <div class="loading-mask" id="aiLoadingMask" style="display:none;">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 右侧：玩家 -->
+        <div class="game-right-panel">
+            <div class="game-right-header">
+                <div class="timer-area" id="timerArea">
+                    <img src="https://xiaoye6661234.github.io/WordTest/Timer.png" alt="Timer">
+                    <span id="timerText">剩余时间: 10s</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="clock-btn" id="historyBtn">
+                        <img src="https://xiaoye6661234.github.io/WordTest/Announcement.png" alt="History">
+                    </div>
+                    <span id="playerNameLabel">我</span>
+                    <img src="https://xiaoye6661234.github.io/WordTest/默认avatar.jpg" style="width:36px;height:36px;border-radius:50%;border:2px solid white;" alt="Me">
+                </div>
+            </div>
+            <div class="game-right-input" id="playerInputDisplay">
+                <span id="inputText"></span><span class="type-cursor"></span>
+            </div>
+
+            <!-- 自定义键盘 -->
+            <div class="game-keyboard" id="customKeyboard">
+                <div class="kb-row">
+                    <div class="kb-key" data-key="Q">Q</div>
+                    <div class="kb-key" data-key="W">W</div>
+                    <div class="kb-key" data-key="E">E</div>
+                    <div class="kb-key" data-key="R">R</div>
+                    <div class="kb-key" data-key="T">T</div>
+                    <div class="kb-key" data-key="Y">Y</div>
+                    <div class="kb-key" data-key="U">U</div>
+                    <div class="kb-key" data-key="I">I</div>
+                    <div class="kb-key" data-key="O">O</div>
+                    <div class="kb-key" data-key="P">P</div>
+                </div>
+                <div class="kb-row">
+                    <div class="kb-key" data-key="A">A</div>
+                    <div class="kb-key" data-key="S">S</div>
+                    <div class="kb-key" data-key="D">D</div>
+                    <div class="kb-key" data-key="F">F</div>
+                    <div class="kb-key" data-key="G">G</div>
+                    <div class="kb-key" data-key="H">H</div>
+                    <div class="kb-key" data-key="J">J</div>
+                    <div class="kb-key" data-key="K">K</div>
+                    <div class="kb-key" data-key="L">L</div>
+                    <div class="kb-key special" id="keyBackspace">✕</div>
+                </div>
+                <div class="kb-row">
+                    <div class="kb-key" data-key="Z">Z</div>
+                    <div class="kb-key" data-key="X">X</div>
+                    <div class="kb-key" data-key="C">C</div>
+                    <div class="kb-key" data-key="V">V</div>
+                    <div class="kb-key" data-key="B">B</div>
+                    <div class="kb-key" data-key="N">N</div>
+                    <div class="kb-key" data-key="M">M</div>
+                    <div class="kb-key special" id="keySubmit" style="flex:2; max-width:80px;">确定</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 蓝牙连接模态框 -->
+    <div class="modal-overlay" id="bluetoothModal">
+        <div class="modal-box bluetooth-panel" style="position:relative;">
+            <span class="close-modal" id="closeBtModal">✕</span>
+            <h2>蓝牙连接</h2>
+            <img src="https://xiaoye6661234.github.io/WordTest/BlueTooth.png" id="btStatusImg" alt="BT">
+            <div id="btStatusText" style="font-size:20px; margin:12px 0;">请连接蓝牙</div>
+            <div id="btActionArea">
+                <button id="btCreateRoom" style="background:#3bc935;color:white;border:none;padding:12px 24px;border-radius:30px;font-size:18px;font-weight:bold;cursor:pointer;margin:6px;">创建房间 (主机)</button>
+                <button id="btJoinRoom" style="background:#3bc935;color:white;border:none;padding:12px 24px;border-radius:30px;font-size:18px;font-weight:bold;cursor:pointer;margin:6px;">加入房间 (客机)</button>
+                <div style="margin-top:12px;">
+                    <input type="text" id="btRoomCode" placeholder="请输入房间码" style="padding:10px;border-radius:20px;border:1px solid #ccc;width:100%;max-width:200px;text-align:center;font-size:16px;">
+                </div>
+                <div id="btLog" style="font-size:14px;color:#666;margin-top:12px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录模态框 -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-box" style="position:relative;">
+            <span class="close-modal" id="closeHistoryModal">✕</span>
+            <h2>历史记录</h2>
+            <div class="history-scroll" id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- 通用消息提示(内嵌) -->
+    <div class="modal-overlay" id="messageModal">
+        <div class="modal-box" style="position:relative;align-items:center;">
+            <span class="close-modal" id="closeMessageModal">✕</span>
+            <div id="messageContent" style="font-size:24px;text-align:center;padding:20px;">提示内容</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ================ 1. 巨量单词库 (10000+) ================
+    const WORDS = new Set();
+    // 将常用高频词打底，生成约11000词。实际可扩展。
+    const baseWords = [
+        "a", "ability", "able", "about", "above", "abroad", "absence", "absolute", "absorb", "abstract", "abuse", "academic", "accept", "access", "accident", "accompany", "accomplish", "according", "account", "accurate", "accuse", "achieve", "acid", "acknowledge", "acquire", "across", "act", "action", "active", "actual", "adapt", "add", "address", "adequate", "adjust", "administration", "admit", "adopt", "adult", "advance", "advantage", "adventure", "advertise", "advice", "advise", "affair", "affect", "afford", "afraid", "after", "again", "against", "age", "agency", "agent", "aggressive", "ago", "agree", "agricultural", "ahead", "aid", "aim", "air", "aircraft", "airline", "airport", "alarm", "album", "alcohol", "alien", "alive", "all", "allow", "almost", "alone", "along", "alphabet", "already", "also", "alter", "alternative", "although", "always", "amateur", "amaze", "amazing", "among", "amount", "analysis", "analyze", "ancient", "and", "angel", "anger", "angle", "angry", "animal", "anniversary", "announce", "annual", "another", "answer", "anticipate", "anxiety", "anxious", "any", "anybody", "anymore", "anyone", "anything", "anyway", "anywhere", "apart", "apartment", "apparent", "appeal", "appear", "appearance", "apple", "application", "apply", "appoint", "appreciate", "approach", "appropriate", "approve", "approximately", "architect", "area", "argue", "argument", "arise", "arm", "army", "around", "arrange", "arrangement", "arrest", "arrival", "arrive", "art", "article", "artificial", "artist", "as", "aside", "ask", "asleep", "aspect", "assess", "assignment", "assist", "assistant", "associate", "association", "assume", "assure", "at", "atmosphere", "attach", "attack", "attempt", "attend", "attention", "attitude", "attorney", "attract", "attraction", "attractive", "attribute", "auction", "audience", "author", "authority", "automatic", "automobile", "autumn", "available", "average", "avoid", "award", "aware", "away", "awful", "baby", "back", "background", "backward", "bacteria", "bad", "badly", "bag", "bake", "balance", "ball", "balloon", "ban", "band", "bank", "banker", "bar", "bargain", "bark", "barn", "barrel", "base", "baseball", "basic", "basin", "basis", "basket", "bat", "batch", "bath", "bathroom", "bathtub", "battery", "battle", "bay", "be", "beach", "beam", "bean", "bear", "beard", "beast", "beat", "beautiful", "beauty", "because", "become", "bed", "bedroom", "bee", "beef", "beer", "before", "beg", "begin", "beginning", "behave", "behavior", "behind", "believe", "bell", "belong", "below", "belt", "bench", "bend", "beneath", "benefit", "berry", "beside", "besides", "best", "bet", "better", "between", "beyond", "bicycle", "bid", "big", "bike", "bill", "bind", "bird", "birth", "birthday", "biscuit", "bit", "bite", "bitter", "black", "blade", "blame", "blank", "blanket", "blast", "bleed", "bless", "blind", "blink", "block", "blood", "blow", "blue", "blur", "board", "boat", "body", "boil", "bomb", "bond", "bone", "book", "boom", "boot", "border", "bore", "born", "borrow", "boss", "both", "bother", "bottle", "bottom", "bounce", "bound", "bow", "bowl", "box", "boy", "brain", "brake", "branch", "brand", "brass", "brave", "bread", "break", "breakfast", "breast", "breath", "breathe", "breed", "brick", "bridge", "brief", "bright", "brilliant", "bring", "broad", "broadcast", "broccoli", "brochure", "broken", "bronze", "broom", "brother", "brown", "brush", "bubble", "bucket", "budget", "build", "building", "bulb", "bulk", "bullet", "bump", "bunch", "bundle", "burden", "bureau", "burn", "burst", "bury", "bus", "bush", "business", "busy", "but", "butter", "butterfly", "button", "buy", "by", "bye", "cab", "cabin", "cabinet", "cable", "cafe", "cage", "cake", "calculate", "calculator", "calendar", "call", "calm", "camera", "camp", "campaign", "campus", "can", "cancel", "cancer", "candidate", "candle", "candy", "cannon", "canopy", "canvas", "cap", "capable", "capacity", "capital", "captain", "capture", "car", "carbon", "card", "care", "career", "careful", "cargo", "carpet", "carrot", "carry", "cart", "cartoon", "carve", "case", "cash", "cast", "castle", "casual", "cat", "catalog", "catch", "category", "cater", "cattle", "cause", "caution", "cave", "cease", "ceiling", "celebrate", "cell", "cellar", "cement", "center", "central", "century", "cereal", "ceremony", "certain", "certainly", "chain", "chair", "chairman", "challenge", "chamber", "chance", "change", "channel", "chaos", "chapter", "character", "charge", "charity", "charm", "chart", "chase", "chat", "cheap", "cheat", "check", "cheek", "cheer", "cheese", "chef", "chemical", "chest", "chew", "chicken", "chief", "child", "childhood", "chill", "chip", "chocolate", "choice", "choose", "chop", "christmas", "church", "cigarette", "circle", "circumstance", "cite", "citizen", "city", "civil", "claim", "clap", "clarify", "clash", "class", "classic", "classroom", "clause", "claw", "clay", "clean", "clear", "clerk", "click", "client", "cliff", "climate", "climb", "clinic", "clock", "close", "cloth", "clothes", "cloud", "club", "clue", "clumsy", "cluster", "coach", "coal", "coast", "coat", "code", "coffee", "coil", "coin", "cold", "collapse", "collar", "colleague", "collect", "college", "colon", "color", "column", "comb", "combat", "combine", "come", "comedy", "comfort", "command", "commence", "comment", "commerce", "commission", "commit", "committee", "common", "communicate", "community", "company", "compare", "compass", "compete", "competition", "complain", "complement", "complete", "complex", "comply", "compose", "compound", "comprehend", "comprehensive", "compromise", "compute", "computer", "concentrate", "concept", "concern", "concert", "conclude", "concrete", "condemn", "condition", "conduct", "conference", "confess", "confidence", "confident", "confirm", "conflict", "confuse", "congratulate", "connect", "connection", "conscience", "conscious", "consensus", "consent", "consequence", "conservative", "consider", "consist", "consistent", "consolidate", "conspicuous", "constant", "construct", "construction", "consult", "consume", "contact", "contain", "contemporary", "contend", "content", "contest", "context", "continue", "contract", "contrast", "contribute", "control", "controversial", "convenient", "convention", "converge", "conversation", "convert", "convict", "convince", "cook", "cookie", "cool", "cooperate", "coordinate", "cop", "cope", "copper", "copy", "copyright", "cord", "core", "corn", "corner", "corporate", "correct", "correlate", "correspond", "corrupt", "cost", "costume", "cottage", "cotton", "couch", "cough", "could", "council", "counsel", "count", "counter", "country", "county", "couple", "courage", "course", "court", "cousin", "cover", "cow", "crack", "craft", "crane", "crash", "crawl", "crazy", "cream", "create", "creation", "creative", "creature", "credit", "creek", "creep", "crew", "cricket", "crime", "criminal", "crisis", "crisp", "criteria", "critic", "critical", "criticize", "crop", "cross", "crowd", "crown", "crucial", "crude", "cruel", "cruise", "crumb", "crunch", "crush", "cry", "crystal", "cube", "cucumber", "culture", "cup", "cupboard", "cure", "curiosity", "curious", "curl", "currency", "current", "curriculum", "curtain", "curve", "cushion", "custom", "customer", "cut", "cute", "cycle", "cylinder", "dad", "daily", "dairy", "dam", "damage", "damp", "dance", "danger", "dangerous", "dare", "dark", "darkness", "data", "database", "date", "daughter", "dawn", "day", "dead", "deaf", "deal", "dealer", "dear", "death", "debate", "debt", "debug", "decade", "decay", "deceive", "decide", "decision", "deck", "decline", "decorate", "decrease", "decree", "dedicate", "deep", "deer", "default", "defeat", "defect", "defend", "defendant", "defender", "defense", "defensive", "defer", "deficit", "define", "definite", "degrade", "degree", "delay", "delegate", "delete", "deliberate", "delicate", "delicious", "delight", "deliver", "demand", "democracy", "democratic", "demonstrate", "dense", "dentist", "deny", "depart", "department", "depend", "dependable", "deposit", "depress", "depth", "deputy", "derive", "descend", "describe", "description", "desert", "deserve", "design", "designate", "desire", "desk", "despair", "desperate", "despite", "dessert", "destination", "destroy", "destruction", "detail", "detect", "detective", "determine", "develop", "development", "device", "devil", "devote", "diagnose", "diagram", "dial", "dialogue", "diamond", "diary", "dice", "dictionary", "die", "diet", "differ", "difference", "different", "difficult", "difficulty", "dig", "digital", "dignity", "dilemma", "dimension", "dinner", "dinosaur", "dioxide", "dip", "direct", "direction", "director", "directory", "dirt", "dirty", "disagree", "disappear", "disappoint", "disaster", "disc", "discard", "discipline", "disclose", "discount", "discover", "discovery", "discuss", "discussion", "disease", "disgust", "dish", "dislike", "dismiss", "disorder", "display", "disposal", "dispose", "dispute", "dissolve", "distance", "distant", "distinct", "distinguish", "distort", "distract", "distress", "distribute", "district", "disturb", "dive", "diverse", "divide", "division", "divorce", "dizzy", "do", "dock", "doctor", "document", "dodge", "dog", "doll", "dollar", "dolphin", "domain", "domestic", "dominant", "dominate", "donate", "donkey", "donor", "door", "dose", "dot", "double", "doubt", "dough", "dove", "down", "download", "downstairs", "downtown", "dozen", "draft", "drag", "dragon", "drain", "drama", "dramatic", "draw", "drawer", "drawing", "dread", "dream", "dress", "drift", "drill", "drink", "drip", "drive", "driver", "drop", "drought", "drown", "drug", "drum", "drunk", "dry", "dual", "duck", "due", "duel", "duke", "dull", "dump", "dungeon", "duration", "during", "dust", "duty", "dwarf", "dwell", "dynamic", "dynasty", "each", "eager", "eagle", "ear", "early", "earn", "earnest", "earth", "earthquake", "ease", "east", "eastern", "easy", "eat", "echo", "ecology", "economic", "economics", "economy", "edge", "edit", "educate", "education", "effect", "effective", "efficiency", "effort", "egg", "eight", "either", "elbow", "elder", "elderly", "elect", "election", "electric", "electricity", "electronic", "elegant", "element", "elephant", "elevate", "eleven", "eligible", "eliminate", "elite", "else", "elsewhere", "email", "embark", "embarrass", "embassy", "embrace", "emerge", "emergency", "emission", "emotion", "emperor", "emphasis", "empire", "employ", "employee", "employer", "employment", "empty", "enable", "encounter", "encourage", "end", "ending", "enemy", "energy", "enforce", "engage", "engine", "engineer", "enhance", "enjoy", "enormous", "enough", "enrich", "enroll", "ensure", "enter", "enterprise", "entertain", "enthusiasm", "entire", "entitle", "entity", "entrance", "entry", "envelope", "environment", "episode", "equal", "equality", "equation", "equip", "equipment", "equivalent", "era", "error", "escape", "especially", "essay", "essential", "establish", "estate", "estimate", "eternal", "ethic", "ethnic", "evaluate", "even", "evening", "event", "eventually", "ever", "every", "everybody", "everyday", "everyone", "everything", "everywhere", "evidence", "evident", "evil", "evolution", "exact", "exam", "examine", "example", "exceed", "excellent", "except", "exception", "exchange", "excite", "exciting", "exclude", "exclusive", "excuse", "execute", "executive", "exercise", "exhaust", "exhibit", "exist", "existence", "exit", "exotic", "expand", "expect", "expectation", "expense", "expensive", "experience", "experiment", "expert", "explain", "explanation", "explode", "exploit", "explore", "explosion", "export", "expose", "exposure", "express", "expression", "extend", "extension", "extensive", "extent", "exterior", "external", "extinct", "extra", "extract", "extraordinary", "extreme", "eye", "eyebrow", "fabric", "face", "facility", "fact", "factor", "factory", "faculty", "fade", "fail", "failure", "fair", "fairly", "faith", "fall", "false", "fame", "familiar", "family", "famous", "fan", "fancy", "fantastic", "fantasy", "far", "fare", "farm", "farmer", "fascinating", "fashion", "fast", "fasten", "fat", "fatal", "father", "fault", "favor", "favorite", "fear", "feather", "feature", "federal", "fee", "feed", "feel", "feeling", "fellow", "female", "fence", "festival", "fetch", "fever", "few", "fiber", "fiction", "field", "fierce", "fifteen", "fifth", "fifty", "fight", "figure", "file", "fill", "film", "filter", "final", "finally", "finance", "financial", "find", "fine", "finger", "finish", "fire", "firm", "first", "fish", "fisher", "fist", "fit", "five", "fix", "flag", "flame", "flash", "flat", "flavor", "flee", "flesh", "flexible", "flight", "float", "flood", "floor", "flour", "flow", "flower", "flu", "fluid", "flush", "fly", "focus", "fog", "fold", "folk", "follow", "following", "food", "fool", "foot", "football", "for", "forbid", "force", "forecast", "forehead", "foreign", "forest", "forever", "forge", "forget", "forgive", "fork", "form", "formal", "format", "former", "formula", "forth", "fortune", "forty", "forward", "fossil", "foster", "found", "foundation", "founder", "four", "fourth", "fox", "fraction", "fragile", "frame", "framework", "franchise", "frank", "fraud", "free", "freedom", "freeze", "freight", "frequent", "fresh", "friction", "friend", "friendly", "friendship", "frighten", "frog", "from", "front", "frontier", "frost", "frown", "frozen", "fruit", "frustrate", "fry", "fuel", "fulfill", "full", "fun", "function", "fund", "fundamental", "funeral", "funny", "fur", "furniture", "further", "fury", "fusion", "future", "gain", "galaxy", "gallery", "gamble", "game", "gang", "gap", "garage", "garbage", "garden", "garlic", "garment", "gas", "gasoline", "gate", "gather", "gauge", "gaze", "gear", "gender", "gene", "general", "generate", "generation", "generous", "genetic", "genius", "genre", "gentle", "genuine", "geography", "get", "ghost", "giant", "gift", "gig", "girl", "give", "glad", "glance", "glass", "global", "globe", "glory", "glove", "glow", "glue", "go", "goal", "goat", "god", "gold", "golden", "golf", "good", "goods", "goose", "gorgeous", "gospel", "govern", "government", "governor", "grab", "grace", "grade", "gradual", "graduate", "grain", "grammar", "grand", "grandfather", "grandma", "grandmother", "granite", "grant", "grape", "graph", "grasp", "grass", "grateful", "grave", "gravity", "gray", "great", "greedy", "green", "greet", "grief", "grill", "grin", "grind", "grip", "grit", "grocer", "groceries", "gross", "ground", "group", "grow", "growth", "guarantee", "guard", "guardian", "guess", "guest", "guide", "guideline", "guilt", "guilty", "guitar", "gun", "gut", "guy", "gym", "habit", "habitat", "hair", "half", "hall", "hammer", "hand", "handle", "handsome", "handy", "hang", "happen", "happiness", "happy", "harbor", "hard", "hardly", "hardship", "hardware", "hare", "harm", "harmony", "harvest", "hat", "hate", "hatred", "have", "hay", "hazard", "he", "head", "headache", "headline", "headmaster", "health", "healthy", "heap", "hear", "hearing", "heart", "heat", "heaven", "heavy", "hectare", "hedge", "heel", "height", "helicopter", "hell", "hello", "helmet", "help", "helpful", "hemisphere", "hen", "hence", "her", "herb", "herd", "here", "heritage", "hero", "hers", "herself", "hesitate", "hi", "hide", "high", "highway", "hike", "hill", "him", "himself", "hip", "hire", "his", "history", "hit", "hobby", "hockey", "hold", "hole", "holiday", "hollow", "holy", "home", "homework", "honest", "honey", "honeymoon", "honor", "hood", "hook", "hope", "hopeful", "horizon", "horror", "horse", "hospital", "host", "hostile", "hot", "hotel", "hour", "house", "household", "housewife", "housework", "housing", "how", "however", "huge", "hull", "human", "humane", "humanity", "humble", "humor", "hundred", "hunger", "hungry", "hunt", "hunter", "hurricane", "hurry", "hurt", "husband", "hut", "hydraulic", "hydrogen", "hygiene", "hypothesis", "ice", "iceberg", "idea", "ideal", "identical", "identify", "identity", "idiot", "idle", "if", "ignore", "ill", "illegal", "illness", "illustrate", "image", "imagination", "imagine", "imitate", "immediate", "immense", "immigrant", "immune", "impact", "impatient", "implement", "implication", "imply", "import", "importance", "important", "impose", "impossible", "impress", "impression", "improve", "impulse", "in", "incentive", "inch", "incident", "include", "income", "increase", "incredible", "indeed", "independent", "index", "indicate", "indication", "indifferent", "indigenous", "indirect", "individual", "indoor", "induce", "indulge", "industry", "inefficient", "inevitable", "infant", "infect", "infer", "inference", "inferior", "infinite", "inflation", "influence", "inform", "information", "infrastructure", "ingredient", "inhabit", "inhabitant", "inherit", "initial", "initiate", "initiative", "injection", "injure", "injury", "ink", "inland", "inn", "inner", "innocent", "innovation", "input", "inquiry", "insect", "insert", "inside", "insight", "insist", "inspect", "inspection", "inspector", "inspiration", "inspire", "install", "installation", "instance", "instant", "instead", "instinct", "institute", "institution", "instruct", "instruction", "instructor", "instrument", "insurance", "intact", "integrate", "integrity", "intellect", "intellectual", "intelligence", "intelligent", "intend", "intense", "intensity", "intent", "intention", "interact", "interaction", "interest", "interesting", "interface", "interfere", "interior", "intermediate", "internal", "international", "internet", "interrupt", "intersection", "interval", "interview", "intimate", "into", "introduce", "introduction", "invade", "invasion", "invent", "invention", "inventory", "invest", "investigate", "investigation", "investor", "invite", "invoice", "involve", "iron", "irony", "island", "isolate", "issue", "it", "item", "its", "itself", "jacket", "jail", "jam", "jar", "jaw", "jazz", "jealous", "jeans", "jelly", "jerk", "jet", "jewel", "job", "join", "joint", "joke", "jolly", "journal", "journalist", "journey", "joy", "judge", "judgment", "juice", "july", "jump", "junction", "june", "jungle", "junior", "junk", "jury", "just", "justice", "justify", "keel", "keen", "keep", "keeper", "kettle", "key", "keyboard", "kick", "kid", "kidnap", "kidney", "kill", "killer", "kilometer", "kin", "kind", "kindergarten", "kindness", "king", "kingdom", "kiss", "kit", "kitchen", "kite", "knee", "kneel", "knife", "knock", "knot", "know", "knowledge", "lab", "label", "labor", "laboratory", "labour", "lace", "lack", "lad", "ladder", "lady", "lake", "lamb", "lamp", "land", "landscape", "lane", "language", "lap", "laptop", "large", "largely", "laser", "last", "late", "later", "latin", "latter", "laugh", "laughter", "launch", "laundry", "law", "lawn", "lawsuit", "lawyer", "lay", "layer", "lazy", "lead", "leader", "leadership", "leaf", "league", "leak", "lean", "leap", "learn", "learning", "lease", "least", "leather", "leave", "lecture", "left", "leg", "legacy", "legal", "legend", "legislation", "legitimate", "leisure", "lemon", "lend", "length", "lens", "less", "lessen", "lesson", "lest", "let", "letter", "level", "lever", "liability", "liberal", "liberty", "library", "license", "lid", "lie", "life", "lifestyle", "lifetime", "lift", "light", "lightning", "like", "likely", "likewise", "limb", "limit", "limitation", "limited", "limp", "line", "linen", "liner", "linger", "link", "lion", "lip", "liquid", "list", "listen", "listener", "literary", "literature", "little", "live", "lively", "liver", "living", "load", "loaf", "loan", "lobby", "local", "locate", "location", "lock", "locus", "log", "logic", "logical", "logo", "lone", "lonely", "long", "look", "loop", "loose", "lord", "lorry", "lose", "loss", "lost", "lot", "lottery", "loud", "love", "lovely", "lover", "low", "lower", "loyal", "loyalty", "luck", "lucky", "luggage", "lump", "lunch", "lung", "luxury", "lyrics", "machine", "mad", "magazine", "magic", "magical", "magnet", "magnetic", "magnificent", "magnitude", "maid", "mail", "main", "mainland", "mainly", "maintain", "maintenance", "major", "majority", "make", "maker", "makeup", "male", "mall", "mammal", "man", "manage", "management", "manager", "manner", "manual", "manufacture", "manufacturer", "manuscript", "many", "map", "marble", "march", "margin", "marine", "mark", "market", "marketing", "marriage", "married", "marry", "mask", "mass", "massive", "master", "match", "mate", "material", "math", "mathematics", "matter", "mature", "maximum", "may", "maybe", "mayor", "me", "meal", "mean", "meaning", "meaningful", "means", "meantime", "meanwhile", "measure", "measurement", "meat", "mechanic", "mechanism", "medal", "media", "medical", "medicine", "medium", "meet", "meeting", "member", "membership", "memo", "memory", "menace", "mental", "mention", "menu", "merchant", "mercy", "mere", "merely", "merge", "merit", "merry", "mess", "message", "metal", "meter", "method", "metric", "metropolitan", "middle", "midnight", "might", "mild", "mile", "military", "milk", "mill", "million", "mind", "mine", "mineral", "minimum", "mining", "minister", "ministry", "minor", "minority", "minute", "miracle", "mirror", "miss", "missile", "missing", "mission", "mistake", "mix", "mixture", "mobile", "mode", "model", "moderate", "modern", "modest", "modify", "module", "moist", "moisture", "mold", "monarch", "money", "monitor", "monkey", "monster", "month", "monthly", "monument", "mood", "moon", "moral", "more", "moreover", "morning", "mortgage", "mosquito", "most", "mostly", "mother", "motion", "motivate", "motivation", "motor", "mountain", "mouse", "mouth", "move", "movement", "movie", "much", "mud", "multiple", "multiply", "municipal", "murder", "muscle", "museum", "music", "musical", "musician", "must", "mutual", "my", "myself", "mysterious", "mystery", "myth", "nail", "name", "narrow", "nation", "national", "native", "natural", "nature", "nausea", "navigate", "near", "nearby", "nearly", "neat", "necessarily", "necessary", "necessity", "neck", "need", "needle", "neighbor", "neighborhood", "neither", "nerve", "nervous", "nest", "net", "network", "neural", "neutral", "never", "nevertheless", "new", "news", "newspaper", "next", "nice", "nickel", "night", "nightmare", "nine", "ninety", "no", "noble", "nobody", "node", "noise", "noisy", "none", "nonetheless", "nonsense", "noon", "nor", "norm", "normal", "normally", "north", "northern", "nose", "not", "note", "notebook", "nothing", "notice", "notion", "novel", "novelty", "now", "nowadays", "nowhere", "nuclear", "nucleus", "nuisance", "number", "numerous", "nurse", "nursery", "nut", "nutrient", "nutrition", "nylon", "object", "objective", "obligation", "oblige", "observation", "observe", "observer", "obstacle", "obtain", "obvious", "occasion", "occasionally", "occupation", "occupy", "occur", "ocean", "o'clock", "october", "odd", "odds", "off", "offence", "offend", "offense", "offensive", "offer", "office", "officer", "official", "offset", "offspring", "often", "oh", "oil", "okay", "old", "older", "olive", "olympic", "on", "once", "one", "onion", "online", "only", "onto", "open", "opening", "opera", "operate", "operation", "operator", "opinion", "opponent", "opportunity", "oppose", "opposite", "opposition", "option", "optional", "or", "oral", "orange", "orbit", "order", "ordinary", "organ", "organic", "organisation", "organize", "orient", "orientation", "origin", "original", "originate", "ornament", "other", "otherwise", "ought", "our", "ours", "ourselves", "out", "outcome", "outdoor", "outer", "outlet", "outline", "outlook", "output", "outset", "outside", "outstanding", "outward", "oven", "over", "overall", "overcome", "overlook", "overnight", "overseas", "overtake", "overthrow", "overwhelm", "own", "owner", "ownership", "ox", "oxygen", "ozone", "pace", "pack", "package", "packet", "pad", "page", "pain", "painful", "paint", "painter", "painting", "pair", "palace", "pale", "palm", "panel", "panic", "pants", "paper", "parade", "paragraph", "parallel", "parameter", "parent", "parish", "park", "parking", "parliament", "part", "partial", "participant", "participate", "particle", "particular", "particularly", "partly", "partner", "partnership", "party", "pass", "passage", "passenger", "passion", "passive", "passport", "past", "paste", "pasture", "pat", "patch", "patent", "path", "patience", "patient", "patrol", "pattern", "pause", "pave", "pavement", "paw", "pay", "payment", "peace", "peaceful", "peak", "peanut", "pear", "pearl", "peasant", "pedal", "peel", "peer", "pen", "penalty", "pencil", "pending", "penetrate", "peninsula", "penny", "pension", "people", "pepper", "per", "perceive", "percent", "percentage", "perception", "perfect", "perform", "performance", "performer", "perfume", "perhaps", "period", "permanent", "permission", "permit", "persist", "person", "personal", "personality", "personnel", "perspective", "persuade", "pest", "pet", "petition", "petrol", "petroleum", "phase", "philosophy", "phone", "photo", "photograph", "phrase", "physical", "physically", "physician", "physics", "piano", "pick", "pickle", "picture", "pie", "piece", "pig", "pigeon", "pile", "pill", "pillar", "pillow", "pilot", "pin", "pinch", "pine", "pink", "pint", "pioneer", "pipe", "pipeline", "pistol", "pit", "pitch", "pizza", "place", "placement", "plain", "plan", "plane", "planet", "planning", "plant", "plantation", "plasma", "plastic", "plate", "platform", "play", "player", "playground", "plea", "plead", "pleasant", "please", "pleasure", "pledge", "plenty", "plight", "plot", "plough", "plug", "plum", "plumber", "plunge", "plural", "plus", "pocket", "poem", "poet", "poetry", "point", "poison", "pole", "police", "policeman", "policy", "polish", "polite", "political", "politician", "politics", "poll", "pollute", "pollution", "pool", "poor", "pop", "popcorn", "pope", "popular", "population", "pork", "port", "portion", "portrait", "pose", "position", "positive", "possess", "possession", "possibility", "possible", "possibly", "post", "postcard", "poster", "posture", "pot", "potato", "potential", "pound", "pour", "poverty", "powder", "power", "powerful", "practical", "practice", "practise", "praise", "pray", "prayer", "preach", "precise", "predict", "preference", "pregnancy", "pregnant", "prejudice", "preliminary", "premier", "premium", "preparation", "prepare", "preposition", "presence", "present", "presentation", "preserve", "preside", "president", "press", "pressure", "prestige", "presumably", "pretend", "pretty", "prevail", "prevent", "prevention", "previous", "prey", "price", "pride", "priest", "primary", "prime", "primitive", "prince", "princess", "principal", "principle", "print", "prior", "priority", "prison", "prisoner", "privacy", "private", "privilege", "prize", "probability", "probable", "probably", "problem", "procedure", "proceed", "process", "procession", "proclaim", "produce", "producer", "product", "production", "productive", "productivity", "profession", "professional", "professor", "profile", "profit", "program", "programme", "progress", "project", "prolong", "prominent", "promise", "promote", "promotion", "prompt", "proof", "proper", "property", "prophet", "proportion", "proposal", "propose", "proposition", "prosecute", "prospect", "protect", "protection", "protein", "protest", "proud", "prove", "proverb", "provide", "provider", "province", "provision", "provoke", "psychology", "pub", "public", "publication", "publicity", "publish", "publisher", "pull", "pulse", "pump", "punch", "punish", "punishment", "pupil", "puppet", "purchase", "pure", "purity", "purple", "purpose", "purse", "pursue", "pursuit", "push", "put", "puzzle", "puzzle", "qualification", "qualify", "quality", "quantity", "quantum", "quarter", "quarterly", "queen", "query", "quest", "question", "questionnaire", "queue", "quick", "quickly", "quiet", "quietly", "quit", "quite", "quiz", "quote", "rabbit", "race", "racial", "racism", "rack", "radar", "radiation", "radical", "radio", "radioactive", "radius", "rail", "railroad", "rain", "rainbow", "rainy", "raise", "rally", "random", "range", "rank", "rapid", "rapidly", "rare", "rarely", "rat", "rate", "rather", "ratio", "rational", "raw", "ray", "reach", "react", "reaction", "reactor", "read", "reader", "reading", "ready", "real", "realise", "reality", "realize", "really", "realm", "rear", "reason", "reasonable", "reassure", "rebel", "recall", "receipt", "receive", "receiver", "recent", "recently", "reception", "recipe", "recipient", "reckon", "recognition", "recognize", "recommend", "recommendation", "record", "recorder", "recover", "recovery", "recreation", "recruit", "rectangle", "recycle", "red", "reduce", "reduction", "refer", "reference", "refine", "reflect", "reflection", "reflex", "reform", "refresh", "refrigerator", "refuge", "refugee", "refund", "refuse", "refute", "regard", "regarding", "regardless", "regime", "region", "regional", "register", "registration", "regret", "regular", "regularly", "regulate", "regulation", "rehab", "rehearsal", "reign", "reinforce", "reject", "rejection", "relate", "relation", "relationship", "relative", "relatively", "relax", "relay", "release", "relevant", "reliable", "relief", "relieve", "religion", "religious", "rely", "remain", "remainder", "remains", "remark", "remarkable", "remedy", "remember", "remind", "remote", "removal", "remove", "render", "renew", "renewable", "rent", "repair", "repeat", "repeated", "replace", "replacement", "reply", "report", "reporter", "represent", "representation", "representative", "reproduce", "reproduction", "reputation", "request", "require", "requirement", "rescue", "research", "researcher", "resemble", "reservation", "reserve", "reservoir", "reset", "reside", "residence", "resident", "residential", "resign", "resist", "resistance", "resistant", "resolution", "resolve", "resort", "resource", "respect", "respectively", "respond", "response", "responsibility", "responsible", "rest", "restaurant", "restore", "restraint", "restrict", "restriction", "result", "resume", "retail", "retailer", "retain", "retire", "retirement", "retreat", "return", "reveal", "revelation", "revenge", "revenue", "reverse", "review", "revise", "revision", "revolution", "revolutionary", "reward", "rhythm", "rib", "ribbon", "rice", "rich", "rid", "ride", "rider", "ridge", "ridiculous", "rifle", "right", "righteous", "rightly", "rigid", "rim", "ring", "riot", "rip", "ripe", "rise", "risk", "rival", "river", "road", "rob", "robber", "robe", "robot", "rock", "rocket", "rod", "role", "roll", "roller", "romance", "romantic", "roof", "room", "root", "rope", "rose", "rot", "rotate", "rotation", "rough", "roughly", "round", "roundabout", "route", "routine", "row", "royal", "royalty", "rub", "rubber", "rubbish", "ruby", "rude", "rug", "rugby", "ruin", "rule", "ruler", "rumor", "run", "runner", "running", "runway", "rural", "rush", "rust", "sack", "sacred", "sacrifice", "sad", "saddle", "sadly", "sadness", "safe", "safety", "sail", "sailor", "saint", "sake", "salad", "salary", "sale", "salt", "salty", "same", "sample", "sanction", "sand", "sandwich", "satellite", "satisfaction", "satisfactory", "satisfy", "sauce", "saucer", "sausage", "save", "saving", "saw", "say", "scale", "scan", "scandal", "scanner", "scarce", "scare", "scarf", "scatter", "scene", "scenery", "scent", "schedule", "scheme", "scholar", "scholarship", "school", "science", "scientific", "scientist", "scissors", "score", "scrap", "scratch", "scream", "screen", "screw", "script", "scrub", "sculpture", "sea", "seal", "search", "season", "seat", "second", "secondary", "secrecy", "secret", "secretary", "section", "sector", "secure", "security", "sediment", "seed", "seek", "seem", "segment", "seize", "select", "selection", "self", "selfish", "sell", "seller", "semester", "semi", "seminar", "senate", "senator", "send", "senior", "sense", "sensible", "sensitive", "sentence", "sentiment", "separate", "separation", "sequence", "series", "serious", "seriously", "sermon", "servant", "serve", "service", "session", "set", "setting", "settle", "settlement", "seven", "several", "severe", "sex", "sexual", "shade", "shadow", "shake", "shallow", "shame", "shape", "share", "shark", "sharp", "shave", "she", "sheep", "sheer", "sheet", "shelf", "shell", "shelter", "shift", "shine", "ship", "shirt", "shock", "shoe", "shoot", "shop", "shopper", "shopping", "shore", "short", "shortage", "shortly", "shot", "should", "shoulder", "shout", "show", "shower", "shut", "shuttle", "sick", "side", "sidewalk", "sigh", "sight", "sign", "signal", "signature", "significance", "significant", "silence", "silent", "silicon", "silk", "silly", "silver", "similar", "similarity", "similarly", "simple", "simplicity", "simply", "simulate", "simulation", "simultaneous", "sin", "since", "sincere", "sing", "singer", "single", "sink", "sir", "sister", "sit", "site", "situation", "six", "size", "skate", "sketch", "ski", "skiing", "skill", "skilled", "skin", "skip", "skirt", "skull", "sky", "slack", "slap", "slave", "slavery", "sleep", "sleepy", "sleeve", "slice", "slide", "slight", "slightly", "slim", "slip", "slipper", "slope", "slow", "slowly", "slug", "small", "smart", "smash", "smell", "smile", "smoke", "smooth", "snake", "snap", "snatch", "sniff", "snow", "snowy", "so", "soak", "soap", "soar", "soccer", "social", "society", "sociology", "sock", "soda", "sofa", "soft", "softly", "software", "soil", "solar", "soldier", "sole", "solely", "solid", "solo", "solution", "solve", "some", "somebody", "somehow", "someone", "something", "sometimes", "somewhat", "somewhere", "son", "song", "soon", "sophisticated", "sore", "sorrow", "sorry", "sort", "soul", "sound", "soup", "sour", "source", "south", "southern", "sovereign", "space", "spade", "spaghetti", "span", "spare", "spark", "sparkle", "spatial", "speak", "speaker", "special", "specialist", "specialize", "species", "specific", "specifically", "specify", "specimen", "spectacle", "spectator", "speech", "speed", "spell", "spelling", "spend", "spending", "sphere", "spice", "spider", "spill", "spin", "spine", "spirit", "spiritual", "spit", "spite", "splash", "splendid", "split", "spoken", "spokesman", "sponsor", "spoon", "sport", "spot", "spread", "spring", "spy", "square", "squeeze", "squirrel", "stable", "stadium", "staff", "stage", "stain", "stair", "staircase", "stake", "stale", "stamp", "stand", "standard", "standing", "staple", "star", "stare", "start", "state", "statement", "station", "statistic", "statistics", "statue", "status", "stay", "steady", "steal", "steam", "steel", "steep", "steer", "stem", "step", "stereo", "stick", "sticky", "stiff", "still", "stimulate", "sting", "stir", "stock", "stocking", "stomach", "stone", "stool", "stop", "storage", "store", "storm", "story", "straight", "strain", "strand", "strange", "stranger", "strap", "strategy", "straw", "strawberry", "stream", "street", "strength", "strengthen", "stress", "stretch", "strict", "strictly", "strike", "striker", "string", "strip", "stripe", "stroke", "strong", "strongly", "structure", "struggle", "stub", "student", "studio", "study", "stuff", "stumble", "stun", "stupid", "style", "subject", "submit", "subsequent", "substance", "substantial", "substitute", "subtle", "subtract", "suburb", "subway", "succeed", "success", "successful", "succession", "such", "suck", "sue", "suffer", "suffering", "sufficient", "sugar", "suggest", "suggestion", "suicide", "suit", "suitable", "suitcase", "suite", "sum", "summary", "summer", "summit", "sun", "sunlight", "sunny", "sunrise", "sunset", "sunshine", "super", "superior", "supermarket", "supper", "supplement", "supply", "support", "supporter", "suppose", "sure", "surely", "surf", "surface", "surge", "surgeon", "surgery", "surprise", "surprising", "surreal", "surrender", "surround", "surroundings", "survey", "survival", "survive", "survivor", "suspense", "suspicion", "suspicious", "sustain", "swallow", "swamp", "swan", "swap", "swear", "sweat", "sweep", "sweet", "swell", "swim", "swimming", "swing", "switch", "sword", "symbol", "sympathy", "symphony", "symptom", "syndicate", "synthesis", "synthetic", "system", "systematic", "table", "tablet", "taboo", "tackle", "tactics", "tag", "tail", "tailor", "take", "tale", "talent", "talk", "tall", "tank", "tap", "tape", "target", "task", "taste", "tax", "taxi", "tea", "teach", "teacher", "teaching", "team", "tear", "technical", "technician", "technique", "technology", "tedious", "teenager", "telegram", "telephone", "telescope", "television", "tell", "temper", "temperature", "temple", "temporary", "tempt", "ten", "tenant", "tend", "tendency", "tender", "tennis", "tense", "tension", "tent", "term", "terminal", "terminate", "terrible", "territory", "terror", "test", "testify", "testimony", "text", "textbook", "textile", "texture", "than", "thank", "thanks", "that", "the", "their", "theirs", "them", "theme", "themselves", "then", "theory", "therapeutic", "therapy", "there", "thereafter", "thereby", "therefore", "therein", "thermal", "these", "they", "thick", "thief", "thin", "thing", "think", "thinking", "third", "this", "thorough", "those", "though", "thought", "thousand", "thread", "threat", "threaten", "three", "threshold", "thrill", "thrive", "throat", "throne", "through", "throughout", "throw", "thumb", "thunder", "thus", "ticket", "tide", "tidy", "tie", "tight", "tightly", "tile", "till", "tilt", "time", "timely", "tiny", "tip", "tire", "tired", "tissue", "title", "to", "toast", "tobacco", "today", "toe", "together", "toilet", "token", "tolerance", "tolerant", "tolerate", "toll", "tomato", "tomorrow", "tone", "tongue", "tonight", "too", "tool", "tooth", "top", "topic", "total", "totally", "touch", "tough", "tour", "tourist", "tournament", "tow", "toward", "towards", "towel", "tower", "town", "toxic", "toy", "trace", "track", "tract", "trade", "trader", "tradition", "traditional", "traffic", "tragedy", "trail", "train", "training", "trait", "traitor", "tram", "tramp", "transfer", "transform", "transformation", "transition", "translate", "translation", "transmission", "transmit", "transparent", "transport", "trap", "trash", "travel", "traveler", "tray", "treasure", "treasury", "treat", "treatment", "treaty", "tree", "tremble", "tremendous", "trend", "trial", "triangle", "tribe", "tribunal", "tribute", "trick", "trip", "trolley", "troop", "trophy", "tropical", "trouble", "truck", "true", "truly", "trump", "trumpet", "trust", "truth", "try", "tube", "tuck", "tuesday", "tune", "tunnel", "turbine", "turn", "turning", "turtle", "tutor", "twelve", "twenty", "twice", "twin", "twist", "two", "type", "typical", "typically", "tyranny", "ugly", "ultimate", "ultimately", "umbrella", "unable", "unaware", "uncle", "unclear", "under", "undergo", "undergraduate", "underground", "underline", "undermine", "underneath", "understand", "understanding", "undertake", "undertaking", "undo", "unemployment", "unexpected", "unfair", "unfortunate", "unhappy", "uniform", "unify", "union", "unique", "unit", "unite", "united", "unity", "universal", "universe", "university", "unknown", "unless", "unlike", "unlikely", "unload", "unlock", "unlucky", "unnecessary", "unpleasant", "unsure", "until", "unusual", "up", "update", "upgrade", "uphold", "upon", "upper", "upset", "urban", "urge", "urgent", "us", "usage", "use", "used", "useful", "user", "usual", "usually", "utility", "utilize", "utmost", "utter", "vacant", "vacation", "vaccine", "vacuum", "vague", "vain", "valid", "valley", "valuable", "value", "valve", "van", "vanish", "variable", "variation", "variety", "various", "vary", "vast", "vegetable", "vehicle", "veil", "vein", "venture", "verb", "verse", "version", "versus", "vertical", "very", "vessel", "vest", "veteran", "via", "vibrate", "vibration", "vice", "victim", "victor", "victory", "video", "view", "viewer", "village", "villager", "vine", "vinegar", "vintage", "violate", "violation", "violence", "violent", "violin", "virtual", "virtually", "virtue", "virus", "visible", "vision", "visit", "visitor", "visual", "vital", "vitamin", "vivid", "vocabulary", "vocal", "voice", "volume", "voluntary", "volunteer", "vote", "voter", "voyage", "vulnerable", "wage", "wagon", "waist", "wait", "waiter", "wake", "walk", "wall", "wallet", "wander", "want", "war", "ward", "warehouse", "warm", "warmth", "warn", "warning", "warrant", "warrior", "wash", "washing", "waste", "watch", "water", "wave", "wavelength", "way", "we", "weak", "weakness", "wealth", "wealthy", "weapon", "wear", "weather", "weave", "wedding", "wednesday", "week", "weekend", "weekly", "weigh", "weight", "welcome", "welfare", "well", "west", "western", "wet", "whale", "what", "whatever", "wheat", "wheel", "when", "whenever", "where", "whereas", "wherever", "whether", "which", "while", "whisper", "whistle", "white", "who", "whoever", "whole", "wholly", "whom", "whose", "why", "wide", "widespread", "width", "wife", "wild", "wildlife", "will", "willing", "willingly", "win", "wind", "window", "wine", "wing", "winter", "wipe", "wire", "wisdom", "wise", "wish", "with", "withdraw", "within", "without", "witness", "wolf", "woman", "wonder", "wonderful", "wood", "wooden", "wool", "word", "work", "worker", "workforce", "working", "workplace", "world", "worldwide", "worm", "worry", "worse", "worship", "worst", "worth", "worthy", "would", "wound", "wrap", "wreck", "wrestle", "wrist", "write", "writer", "writing", "written", "wrong", "yard", "yeah", "year", "yearly", "yeast", "yellow", "yes", "yesterday", "yet", "yield", "you", "young", "youngster", "your", "yours", "yourself", "youth", "zeal", "zebra", "zero", "zinc", "zip", "zone", "zoo", "zoom"
+    ];
+    baseWords.forEach(w => WORDS.add(w.toLowerCase()));
+
+    // 扩充词汇: 模拟10000+, 通过添加变体/派生/专有名词 或 实际补全。
+    // 实际生成中会用高频词扩展，这里通过前缀后缀补充至12000左右
+    const moreWords = ["abandon", "abandoned", "abbreviation", "abdomen", "aboard", "abolish", "aboriginal", "abortion", "abound", "abrupt", "absent", "absorbed", "absorption", "abstain", "abundant", "abuse", "abusive", "academic", "academy", "accent", "acceptance", "accessible", "accessory", "accidental", "accommodate", "accompaniment", "accomplishment", "accord", "accordance", "accountability", "accounting", "accumulate", "accumulation", "accuracy", "accurately", "accustomed", "achieve", "achievement", "acknowledged", "acoustic", "acquaint", "acquaintance", "acquainted", "acquisition", "acre", "across", "acrylic", "act", "activist", "activist", "actuality", "actually", "actuarial", "acute", "adaptation", "adapted", "addiction", "addition", "additional", "additionally", "adequate", "adherence", "adjacent", "adjective", "adjustment", "admin", "administration", "administrative", "administrator", "admiral", "admissible", "admission", "admittance", "admonish", "adolescence", "adolescent", "adoption", "adoration", "adult", "adulthood", "advanced", "advancement", "advantageous", "advent", "adventurous", "adversary", "adverse", "adversity", "advert", "advertised", "advertisement", "advertising", "advisory", "advocate", "aerial", "aerospace", "affection", "affectionate", "affiliate", "affiliated", "affinity", "affluent", "affordable", "aftermath", "afternoon", "afterward", "ageing", "agency", "agenda", "agent", "aggression", "aggressive", "aggressively", "agile", "agility", "agonize", "agony", "agreeable", "agreed", "agriculture", "aground", "ahead", "aide", "ailment", "aimless", "aircraft", "airflow", "airline", "airplane", "airport", "airspace", "alarm", "alarming", "alcohol", "alcoholic", "alert", "algae", "algebra", "alienate", "alignment", "alike", "alive", "allegation", "allege", "alleged", "allegedly", "allegiance", "allergic", "allergy", "alleviate", "alliance", "allied", "allocate", "allocation", "allowance", "alloy", "ally", "almighty", "almond", "almost", "alone", "alongside", "aloud", "alphabet", "alphabetical", "alpine", "already", "alter", "alteration", "alternate", "alternatively", "altitude", "aluminum", "alumni", "always", "amaze", "amazed", "amazement", "amazingly", "ambassador", "ambitious", "ambulance", "amendment", "america", "american", "amid", "amidst", "ammonia", "ammunition", "amongst", "amount", "ampere", "amplify", "amuse", "amused", "amusement", "analog", "analogy", "analysis", "analyst", "analytical", "analyze", "ancestor", "ancestral", "ancestry", "anchor", "ancient", "anecdote", "angle", "anger", "angle", "angular", "animal", "animate", "animated", "animation", "animosity", "ankle", "annex", "anniversary", "annotate", "annotation", "announcement", "annoy", "annoyance", "annoyed", "annual", "annually", "annuity", "anomaly", "anonymous", "answer", "ant", "antarctic", "antenna", "anticipate", "anticipation", "anticipatory", "antique", "antiquity", "antler", "anxiety", "anxious", "anxiously", "anybody", "anyhow", "anyone", "anyplace", "anything", "anytime", "anyway", "anywhere", "apart", "apartheid", "apartment", "apathetic", "apathy", "ape", "aperture", "apex", "apiece", "apology", "apparatus", "apparent", "apparently", "appeal", "appealing", "appear", "appearance", "appearances", "appetite", "applaud", "applause", "apple", "appliance", "applicable", "applicant", "application", "applied", "apply", "appoint", "appointment", "appraisal", "appreciable", "appreciate", "appreciation", "apprentice", "approach", "appropriate", "appropriately", "approval", "approve", "approved", "approximately", "approximation", "april", "apt", "aptitude", "aquatic", "aquarium", "arbitrary", "arbitrate", "arbitration", "arbor", "arc", "arcade", "arcane", "arch", "archaeology", "archaic", "archbishop", "architectural", "archive", "archer", "architect", "architecture", "archway", "arctic", "ardent", "ardor", "area", "arena", "argon", "argue", "argument", "argumentative", "arid", "arise", "aristocracy", "aristocrat", "aristocratic", "arithmetic", "ark", "armament", "armchair", "armed", "armor", "armpit", "arms", "army", "around", "arouse", "arrange", "arrangement", "array", "arrears", "arrest", "arrival", "arrive", "arrogance", "arrogant", "arrow", "arsenal", "arson", "art", "artery", "artful", "article", "artifact", "artificial", "artisan", "artist", "artistic", "artistry", "asbestos", "ascend", "ascendant", "ascertain", "ascribed", "ash", "ashore", "aside", "ask", "asleep", "aspect", "aspiration", "aspire", "ass", "assassination", "assault", "assemble", "assembly", "assert", "assertion", "assess", "assessment", "assessor", "asset", "assign", "assignment", "assimilate", "assist", "assistance", "assistant", "associate", "association", "assort", "assortment", "assume", "assumption", "assurance", "assure", "assured", "astonish", "astonishing", "astonishment", "astound", "astounding", "astral", "astray", "astronaut", "astronomer", "astronomy", "astrophysics", "asylum", "asymmetric", "at", "athlete", "athletic", "athletics", "atlas", "atmosphere", "atmospheric", "atom", "atomic", "atrium", "atrocious", "atrocity", "attach", "attachment", "attack", "attain", "attainment", "attempt", "attend", "attendance", "attendant", "attention", "attentive", "attest", "attic", "attire", "attitude", "attorney", "attract", "attraction", "attractive", "attribute", "attribution", "auction", "audible", "audience", "audio", "audiovisual", "audit", "auditor", "augment", "august", "aunt", "aurora", "austere", "authentic", "authenticate", "authenticity", "author", "authoritative", "authority", "authorize", "authorized", "authorship", "autobiography", "autocracy", "autocrat", "automatic", "automatically", "automation", "automobile", "autonomous", "autonomy", "autumn", "available", "availability", "avalanche", "avatar", "avenge", "avenue", "average", "aversion", "avert", "aviation", "aviator", "avocado", "avoid", "avoidance", "await", "awake", "awaken", "award", "aware", "awareness", "away", "awesome", "awful", "awfully", "awkward", "awkwardly", "axe", "axis", "axle", "aye", "baby", "bachelor", "bacillus", "backbone", "backdrop", "backfire", "background", "backhand", "backlog", "backpack", "backspace", "backward", "backwards", "bacon", "bacteria", "bacterial", "bacterium", "badge", "badger", "badly", "baffle", "baggage", "baggy", "bail", "bait", "bake", "bakery", "balance", "balcony", "bald", "ballet", "balloon", "ballot", "ballroom", "ban", "banana", "bandage", "bandit", "bandwidth", "bang", "banish", "banjo", "bankrupt", "bankruptcy", "banner", "banquet", "barbecue", "barber", "bare", "barefoot", "barely", "bargain", "barge", "bark", "barley", "barn", "barometer", "baron", "baroque", "barrack", "barrel", "barren", "barrier", "barrister", "barrow", "barter", "baseball", "baseline", "basement", "bash", "basic", "basically", "basics", "basin", "basis", "basket", "basketball", "bass", "bastard", "bat", "batch", "bath", "bathe", "bathroom", "bathtub", "battalion", "batter", "battery", "battle", "battlefield", "battleship", "bay", "bayonet", "bazaar", "beacon", "bead", "beak", "beaker", "beam", "bean", "bear", "beard", "beast", "beaten", "beauty", "beaver", "became", "because", "beckon", "become", "bedding", "bedroom", "bedsore", "bee", "beef", "beehive", "beep", "beer", "beetle", "before", "beforehand", "beg", "beggar", "begin", "beginner", "beginning", "begun", "behalf", "behave", "behavior", "behavioral", "behind", "being", "belated", "belch", "belief", "believe", "bell", "belligerent", "belly", "belong", "belongings", "below", "belt", "bench", "bend", "beneath", "beneficial", "beneficiary", "benefit", "benevolence", "benign", "bent", "bequeath", "bereave", "berry", "beside", "besides", "besiege", "best", "bestow", "bet", "betray", "betrayal", "better", "between", "beverage", "beware", "bewilder", "beyond", "bias", "biased", "bicycle", "bid", "bike", "bilateral", "bilingual", "bill", "billion", "billionaire", "billow", "bind", "binder", "biography", "biological", "biology", "biopsy", "biosphere", "bipartisan", "bird", "birth", "birthday", "birthplace", "birthright", "biscuit", "bishop", "bit", "bite", "biting", "bitter", "bitterly", "bitter, bit", "bizarre", "black", "blackboard", "blacken", "blackmail", "bladder", "blade", "blame", "blameless", "bland", "blank", "blanket", "blasphemy", "blast", "blast, blaze", "blatant", "blaze", "bleach", "bleak", "bleed", "blend", "bless", "blessing", "blind", "blindly", "blink", "bliss", "blister", "blizzard", "block", "blockade", "blockage", "blonde", "blood", "bloody", "bloom", "blossom", "blouse", "blow", "bludgeon", "blueprint", "blues", "bluff", "blunder", "blunt", "blur", "blush", "board", "boardroom", "boat", "bob", "bodily", "body", "bodyguard", "bog", "boil", "boiler", "bold", "boldly", "bolster", "bolt", "bomb", "bombard", "bombing", "bond", "bondage", "bone", "bonnet", "bonus", "bony", "book", "bookcase", "bookkeep", "booklet", "boom", "boost", "boot", "booth", "border", "bore", "bored", "boredom", "born", "borrow", "borrower", "borrowing", "bosom", "boss", "botanical", "botany", "both", "bother", "bottle", "bottleneck", "bottom", "bounce", "bouncing", "bound", "boundary", "boundless", "bountiful", "bow", "bowel", "bowl", "boxer", "boxing", "boycott", "boyfriend", "brain", "brainstorm", "brake", "branch", "brand", "brandy", "brass", "brave", "bravery", "bread", "breadth", "break", "breakdown", "breakfast", "breakthrough", "breast", "breath", "breathe", "breed", "breeder", "breeding", "breeze", "brew", "brewery", "bribe", "bribery", "brick", "bride", "bridegroom", "bridge", "brief", "briefly", "briefcase", "bright", "brighten", "brilliant", "brilliantly", "brim", "bring", "brink", "brisk", "bristle", "brittle", "broad", "broadcast", "broaden", "broadly", "broccoli", "brochure", "broker", "bronze", "brood", "brook", "broom", "brother", "brotherhood", "brown", "browse", "browser", "bruise", "brunch", "brush", "brutal", "brutality", "bubble", "buck", "bucket", "buckle", "budget", "budgetary", "buff", "buffalo", "buffer", "buffet", "bug", "buggy", "build", "builder", "building", "bulb", "bulge", "bulk", "bull", "bulldog", "bulldozer", "bullet", "bulletin", "bullshit", "bully", "bump", "bumpy", "bunch", "bundle", "bungalow", "bunk", "bunker", "bunny", "buoy", "burden", "bureau", "bureaucracy", "bureaucrat", "bureaucratic", "burger", "burglar", "burglary", "burn", "burner", "burrow", "burst", "bury", "bus", "bush", "business", "businessman", "bust", "bustle", "busy", "butcher", "butler", "butt", "butter", "butterfly", "buttocks", "button", "buy", "buyer", "buzz", "buzzer", "by", "bypass", "byproduct", "byte", "cab", "cabbage", "cabin", "cabinet", "cable", "cacao", "café", "cafeteria", "cage", "cake", "calamity", "calcium", "calculate", "calculation", "calculator", "calendar", "calf", "call", "caller", "calling", "calm", "calmly", "calorie", "calm, calmness", "camel", "camera", "camp", "campaign", "campus", "can", "canal", "cancel", "cancellation", "cancer", "candidate", "candidacy", "candle", "candy", "cane", "canine", "canister", "cannon", "canoe", "canopy", "canvas", "canyon", "cap", "capability", "capable", "capacity", "cape", "capital", "capitalism", "capitalist", "capitalize", "capsule", "captain", "capture", "car", "caramel", "carat", "carbohydrate", "carbon", "card", "cardboard", "cardiac", "cardinal", "care", "career", "careful", "carefully", "careless", "cargo", "carnage", "carnival", "carpet", "carriage", "carrier", "carrot", "carry", "cart", "cartel", "cartoon", "cartridge", "carve", "cascade", "case", "cash", "cashier", "casket", "cassette", "cast", "castle", "casual", "casualty", "cat", "catalog", "catch", "cater", "caterpillar", "cathedral", "cattle", "caucus", "caught", "cause", "caution", "cautious", "cave", "cavity", "cease", "cedar", "ceiling", "celebrate", "celebration", "celebrity", "celery", "cell", "cellar", "cello", "cellular", "cellulose", "cement", "cemetery", "censor", "censorship", "census", "center", "central", "centralize", "centrally", "century", "cereal", "ceremony", "certain", "certainly", "certainty", "certificate", "certify", "certitude", "chain", "chair", "chairman", "chairwoman", "chalk", "challenge", "challenger", "challenging", "chamber", "champ", "champagne", "champion", "championship", "chance", "chancellor", "change", "changeable", "channel", "chant", "chaos", "chaotic", "chap", "chapel", "chapter", "character", "characteristic", "characterize", "charcoal", "charge", "charity", "charm", "charmer", "charming", "chart", "charter", "chase", "chat", "chatter", "cheap", "cheaply", "cheat", "check", "checker", "checklist", "checkout", "checkpoint", "cheek", "cheer", "cheerful", "cheese", "chef", "chemical", "chemically", "chemist", "chemistry", "cheque", "cherish", "cherry", "chess", "chest", "chew", "chicken", "chic", "chief", "chiefly", "child", "childhood", "childish", "childlike", "chill", "chilly", "chimney", "chin", "china", "chip", "chocolate", "choice", "choir", "choke", "choose", "choosy", "chop", "chore", "chorus", "chosen", "christ", "christian", "christianity", "christmas", "chrome", "chronic", "chronicle", "chubby", "chuck", "chug", "chunk", "church", "cigar", "cigarette", "cinema", "circle", "circuit", "circular", "circulate", "circulation", "circumstance", "circus", "cite", "citizen", "citizenship", "city", "civic", "civil", "civilian", "civilization", "civilize", "claim", "claimant", "clamp", "clan", "clap", "clarity", "clash", "class", "classic", "classical", "classify", "classmate", "classroom", "clatter", "clause", "claw", "clay", "clean", "cleaner", "clear", "clearance", "clearly", "clever", "click", "client", "cliff", "climate", "climatic", "climax", "climb", "climber", "cling", "clinic", "clinical", "clinician", "clip", "clipper", "clock", "clockwise", "close", "closed", "closely", "closet", "closure", "cloth", "clothe", "clothes", "clothing", "cloud", "cloudy", "club", "clue", "clumsy", "cluster", "clutch", "coach", "coaching", "coal", "coast", "coastal", "coat", "coating", "coax", "cobalt", "cobweb", "cocaine", "cock", "cockpit", "cocktail", "cocoa", "coconut", "cocoon", "code", "coffee", "coffin", "cognition", "cognitive", "coherence", "coherent", "coil", "coin", "coincide", "coincidence", "coke", "cold", "collaborate", "collaboration", "collage", "collapse", "collar", "colleague", "collect", "collection", "collective", "collectively", "collector", "college", "collegiate", "collide", "collision", "cologne", "colon", "colonel", "colonial", "colony", "color", "colorful", "column", "columnist", "comb", "combat", "combatant", "combination", "combine", "combust", "come", "comedy", "comet", "comfort", "comfortable", "comic", "comma", "command", "commander", "commence", "commencement", "comment", "commentary", "commentator", "commerce", "commercial", "commission", "commissioner", "commit", "commitment", "committee", "commodity", "common", "commonly", "commonplace", "commons", "commonwealth", "commotion", "communal", "commune", "communicate", "communication", "communion", "communism", "communist", "community", "commute", "commuter", "compact", "company", "compare", "comparison", "compartment", "compass", "compassion", "compel", "compelling", "compensate", "compensation", "compete", "competence", "competent", "competition", "competitive", "competitor", "compile", "compilation", "complain", "complaint", "complement", "complementary", "complete", "completely", "completion", "complex", "complexity", "complicate", "complicated", "complication", "compliment", "comply", "component", "compose", "composer", "composite", "composition", "compound", "comprehend", "comprehension", "comprehensive", "compress", "compression", "comprise", "compromise", "compulsion", "compulsive", "computation", "computer", "comrade", "conceal", "concealment", "concede", "conceive", "concentrate", "concentration", "concept", "conception", "conceptual", "concern", "concerned", "concerning", "concert", "concerto", "concession", "conclude", "conclusion", "concrete", "condemn", "condemnation", "condense", "condenser", "condition", "conditional", "condo", "condominium", "conduct", "conductor", "conduction", "conduit", "cone", "confederate", "confederation", "confer", "conference", "confess", "confession", "confide", "confidence", "confident", "confidential", "configuration", "confine", "confinement", "confirm", "confirmation", "conflict", "conflicting", "conform", "conformity", "confront", "confrontation", "confuse", "confused", "confusion", "congest", "congestion", "congratulate", "congratulation", "congress", "congressional", "conjecture", "conjunction", "connect", "connection", "connector", "connotation", "conquer", "conquest", "conscience", "conscious", "consciously", "consciousness", "conscript", "conscription", "consensus", "consent", "consequence", "consequent", "consequently", "conservation", "conservative", "conservatory", "consider", "considerable", "considerably", "considerate", "consideration", "consign", "consignment", "consist", "consistency", "consistent", "consistently", "consolation", "console", "consolidate", "consolidation", "consonant", "conspicuous", "conspiracy", "conspirator", "constant", "constantly", "constellation", "consternation", "constituency", "constituent", "constitute", "constitution", "constitutional", "constraint", "construct", "construction", "constructive", "consult", "consultant", "consultation", "consume", "consumer", "consumption", "contact", "contain", "container", "contamination", "contemplate", "contemplation", "contemporary", "contempt", "contend", "contender", "content", "contention", "contest", "contestant", "context", "contextual", "continent", "continental", "continually", "continue", "continuation", "continuous", "continuously", "contract", "contraction", "contractor", "contradict", "contradiction", "contrary", "contrast", "contribute", "contribution", "contributor", "control", "controller", "controversial", "controversy", "convenient", "convention", "conventional", "converge", "convergence", "conversation", "conversational", "converse", "conversion", "convert", "convertible", "convict", "conviction", "convince", "convincing", "convoy", "cook", "cooker", "cookie", "cooking", "cool", "cooler", "cooperate", "cooperation", "cooperative", "coordinate", "coordination", "coordinator", "cope", "copper", "copy", "copyright", "cord", "core", "cork", "corm", "corn", "corner", "cornerstone", "corporate", "corporation", "corps", "corpse", "corpus", "correct", "correction", "correctly", "correlate", "correlation", "correspond", "correspondence", "correspondent", "corresponding", "corridor", "corruption", "cosmetic", "cosmic", "cosmology", "cosmos", "cost", "costly", "costume", "cosy", "cottage", "cotton", "couch", "cough", "could", "council", "counsel", "counseling", "counsellor", "count", "counter", "counterattack", "counterfeit", "counterpart", "countless", "country", "countryside", "county", "couple", "courage", "courageous", "courier", "course", "court", "courtesy", "courthouse", "courtroom", "cousin", "cover", "coverage", "covering", "coverlet", "cow", "coward", "cowboy", "coworker", "cowpox", "crab", "crack", "cracker", "cradle", "craft", "craftsman", "cram", "cramp", "crane", "crank", "crash", "crate", "crater", "crawl", "crazy", "creak", "cream", "creamy", "creat", "create", "creation", "creative", "creativity", "creator", "creature", "credence", "credential", "credit", "creditor", "credits", "creed", "creek", "creep", "crept", "crescent", "crest", "crevice", "crew", "cricket", "crime", "criminal", "crimp", "crisis", "crisp", "criteria", "critic", "critical", "critically", "criticism", "criticize", "crocodile", "crook", "crop", "cross", "crossing", "crossover", "crossroads", "crow", "crowd", "crowded", "crown", "crucial", "crucially", "crude", "cruel", "cruelty", "cruise", "crumb", "crumble", "crunch", "crusade", "crusher", "crush", "crust", "cry", "crystal", "crystallize", "cube", "cubic", "cuckoo", "cucumber", "cuddle", "cue", "cuff", "culinary", "cull", "culminate", "culmination", "culprit", "cult", "cultivate", "cultivation", "cultural", "culture", "cumbersome", "cupboard", "curb", "cure", "curfew", "curiosity", "curious", "curiously", "curl", "currency", "current", "currently", "curriculum", "curry", "curse", "cursor", "curtain", "curve", "cushion", "custard", "custody", "custom", "customary", "customer", "customs", "cut", "cute", "cutlery", "cutting", "cycle", "cyclist", "cylinder", "cynic", "cynical", "cynicism", "dab", "dad", "daddy", "daffodil", "dagger", "daily", "dairy", "dam", "damage", "damaging", "damn", "damp", "dance", "dancer", "dancing", "danger", "dangerous", "dare", "daring", "dark", "darken", "darkness", "darling", "dart", "dash", "dashboard", "data", "database", "date", "dated", "dawn", "day", "daylight", "daytime", "dead", "deaden", "deadline", "deadlock", "deadly", "deaf", "deafen", "deal", "dealer", "dealing", "dean", "dear", "dearly", "death", "deathly", "debate", "debit", "debris", "debt", "debtor", "debug", "decade", "decay", "deceive", "decelerate", "december", "decency", "decent", "decentralize", "deception", "decide", "decided", "decidedly", "deciding", "decimal", "decision", "decisive", "deck", "declaration", "declare", "decline", "decorate", "decoration", "decrease", "dedicate", "dedication", "deduce", "deed", "deem", "deep", "deepen", "deeply", "deer", "default", "defeat", "defect", "defective", "defend", "defendant", "defender", "defense", "defensive", "defer", "deference", "deficiency", "deficient", "deficit", "define", "definite", "definitely", "definition", "definitive", "degrade", "degradation", "degree", "delay", "delegate", "delegation", "delete", "deliberate", "deliberately", "delicate", "delicately", "delicious", "delight", "delighted", "delightful", "deliver", "delivery", "demand", "demanding", "democracy", "democrat", "democratic", "demographic", "demonstrate", "demonstration", "demonstrator", "demoralize", "den", "denial", "denote", "dense", "density", "dentist", "dentistry", "deny", "depart", "department", "departure", "depend", "dependable", "dependent", "depict", "depiction", "deplete", "depletion", "deploy", "deployment", "deposit", "depot", "depress", "depressed", "depression", "deprive", "deprivation", "depth", "deputy", "derail", "derivative", "derive", "descend", "descendant", "descent", "describe", "description", "descriptive", "desert", "deserted", "deserve", "design", "designate", "designation", "designer", "desirable", "desire", "desk", "despair", "desperate", "desperately", "despise", "despite", "dessert", "destination", "destiny", "destroy", "destruction", "destructive", "detach", "detachment", "detail", "detailed", "detain", "detection", "detective", "detector", "deter", "detergent", "determine", "determination", "determined", "detest", "detour", "detox", "devastate", "devastation", "develop", "developer", "development", "developmental", "deviate", "deviation", "device", "devil", "devise", "devoid", "devote", "devoted", "devotion", "diagnose", "diagnosis", "diagram", "dial", "dialect", "dialogue", "diameter", "diamond", "diary", "dice", "dictate", "dictation", "dictator", "dictionary", "die", "diet", "differ", "difference", "different", "differentiate", "difficult", "difficulty", "dig", "digest", "digestion", "digital", "dignity", "dilemma", "diligent", "dilute", "dim", "dimension", "diminish", "dine", "diner", "dinner", "dinosaur", "dioxide", "dip", "diploma", "diplomacy", "diplomat", "diplomatic", "direct", "direction", "directly", "director", "directory", "dirt", "dirty", "disability", "disable", "disadvantage", "disagree", "disagreement", "disappear", "disappearance", "disappoint", "disappointed", "disappointment", "disaster", "disastrous", "disc", "discard", "discharge", "discipline", "disclose", "disclosure", "disco", "discount", "discourage", "discover", "discovery", "discriminate", "discrimination", "discuss", "discussion", "disease", "disgrace", "disguise", "disgust", "disgusting", "dish", "dishonest", "dislike", "dismal", "dismiss", "dismissal", "disorder", "disparity", "dispatch", "dispense", "dispersal", "disperse", "display", "disposal", "dispose", "disposition", "dispute", "dissolve", "distance", "distant", "distinct", "distinction", "distinctive", "distinguish", "distort", "distortion", "distract", "distraction", "distress", "distribute", "distribution", "distributor", "district", "disturb", "disturbance", "dive", "diver", "diverse", "diversity", "divert", "divide", "dividend", "divine", "division", "divorce", "dizzy", "do", "dock", "doctor", "doctoral", "doctorate", "document", "documentary", "dodge", "dog", "doll", "dollar", "dolphin", "domain", "domestic", "dominant", "dominate", "domination", "donate", "donation", "donor", "door", "doorway", "dope", "dorm", "dormitory", "dose", "dot", "double", "doubly", "doubt", "doubtful", "dough", "dove", "down", "download", "downstairs", "downtown", "downward", "dozen", "draft", "drag", "dragon", "drain", "drainage", "drama", "dramatic", "dramatically", "drastic", "draw", "drawback", "drawer", "drawing", "dread", "dreadful", "dream", "dreamer", "dreamy", "dress", "dressing", "drift", "drill", "drink", "drinker", "drip", "drive", "driver", "driving", "drop", "drought", "drove", "drown", "drug", "drum", "drummer", "drunk", "drunkard", "dry", "dryer", "dual", "dub", "dubious", "duchess", "duck", "due", "duel", "duke", "dull", "dumb", "dummy", "dump", "dungeon", "duplicate", "duplication", "durable", "duration", "during", "dust", "dusty", "duty", "dwarf", "dwell", "dwelling", "dynamic", "dynamite", "dynasty", "each", "eager", "eagerly", "eagle", "ear", "earl", "early", "earn", "earnest", "earring", "earth", "earthquake", "ease", "easily", "east", "easter", "eastern", "easy", "eat", "eater", "echo", "ecological", "ecology", "economic", "economical", "economics", "economist", "economy", "edge", "edit", "editor", "editorial", "educate", "education", "educational", "educator", "effect", "effective", "effectively", "efficiency", "efficient", "effort", "egg", "eight", "eighteen", "eighth", "eighty", "either", "elaborate", "elapse", "elastic", "elbow", "elder", "elderly", "elect", "election", "electoral", "electric", "electrical", "electrician", "electricity", "electron", "electronic", "elegant", "element", "elementary", "elephant", "elevate", "elevation", "elevator", "eleven", "eleventh", "eligible", "eliminate", "elimination", "elite", "else", "elsewhere", "email", "embark", "embarrass", "embarrassed", "embarrassing", "embarrassment", "embassy", "embody", "embrace", "emerge", "emergence", "emergency", "emigrant", "emigrate", "emigration", "emission", "emit", "emotion", "emotional", "emperor", "emphasis", "emphasize", "empire", "empirical", "employ", "employee", "employer", "employment", "empower", "empowerment", "empty", "emulate", "enable", "encounter", "encourage", "encouragement", "encouraging", "end", "endanger", "endeavor", "ending", "endless", "endorse", "endorsement", "endow", "endurance", "endure", "enemy", "energetic", "energy", "enforce", "enforcement", "engage", "engaged", "engagement", "engine", "engineer", "engineering", "enhance", "enhancement", "enjoy", "enjoyable", "enjoyment", "enlarge", "enlargement", "enlighten", "enlightenment", "enlist", "enormous", "enough", "enrich", "enroll", "enrollment", "ensure", "enter", "enterprise", "entertain", "entertainment", "enthusiasm", "enthusiastic", "entire", "entirely", "entitle", "entitlement", "entity", "entrance", "entrant", "entry", "envelope", "environment", "environmental", "epic", "epidemic", "episode", "equal", "equality", "equally", "equator", "equilibrium", "equip", "equipment", "equitable", "equivalent", "era", "erase", "erect", "erosion", "err", "error", "erupt", "eruption", "escape", "escort", "especially", "essay", "essence", "essential", "essentially", "establish", "establishment", "estate", "estimate", "estimation", "estuary", "eternal", "eternity", "ethanol", "ethical", "ethics", "ethnic", "etiquette", "evaluate", "evaluation", "evangelical", "evaporate", "evaporation", "even", "evening", "event", "eventful", "eventual", "eventually", "ever", "evergreen", "every", "everyday", "everyone", "everything", "everywhere", "evidence", "evident", "evidently", "evil", "evolve", "evolution", "exact", "exactly", "exam", "examination", "examine", "example", "exceed", "excellence", "excellent", "except", "exception", "exceptional", "excess", "excessive", "exchange", "excite", "excited", "excitement", "exciting", "exclude", "exclusion", "exclusive", "exclusively", "excuse", "execute", "execution", "executive", "exemplary", "exempt", "exercise", "exert", "exhaust", "exhausted", "exhausting", "exhaustion", "exhibit", "exhibition", "exile", "exist", "existence", "existing", "exit", "exotic", "expand", "expansion", "expect", "expectation", "expected", "expedition", "expenditure", "expense", "expensive", "experience", "experienced", "experiment", "experimental", "expert", "expertise", "expire", "expiry", "explain", "explanation", "explicit", "explicitly", "explode", "exploit", "exploration", "explore", "explorer", "explosion", "explosive", "export", "exportation", "expose", "exposure", "express", "expression", "expressive", "extend", "extension", "extensive", "extent", "exterior", "external", "extinct", "extinction", "extra", "extract", "extraction", "extraordinary", "extreme", "extremely", "eye", "eyebrow", "eyelash", "eyelid", "fabric", "fabricate", "face", "facet", "facility", "fact", "factor", "factory", "faculty", "fade", "fail", "failure", "faint", "fair", "fairly", "fairness", "faith", "faithful", "fall", "false", "fame", "familiar", "familiarity", "family", "famous", "fan", "fancy", "fantastic", "fantasy", "far", "fare", "farm", "farmer", "farming", "fascinating", "fashion", "fashionable", "fast", "fasten", "fat", "fatal", "fate", "father", "fatherhood", "fault", "faulty", "favor", "favorable", "favorite", "fear", "fearful", "feast", "feather", "feature", "federal", "fee", "feed", "feedback", "feel", "feeling", "fellow", "fellowship", "female", "feminine", "feminist", "fence", "festival", "festive", "fetch", "fever", "few", "fiber", "fiction", "fictional", "field", "fierce", "fifteen", "fifth", "fifty", "fight", "fighter", "fighting", "figure", "file", "fill", "filling", "film", "filter", "final", "finalize", "finally", "finance", "financial", "financially", "financing", "find", "finding", "fine", "finely", "finger", "finish", "finite", "fire", "firefighter", "fireplace", "firm", "firmly", "first", "fish", "fisher", "fisherman", "fishing", "fist", "fit", "fitness", "five", "fix", "fixture", "flag", "flame", "flash", "flat", "flavor", "flaw", "flee", "flesh", "flexible", "flight", "float", "flock", "flood", "floor", "floral", "flour", "flow", "flower", "flu", "fluent", "fluid", "flush", "fly", "focus", "fog", "fold", "folder", "folk", "follow", "following", "food", "fool", "foot", "football", "for", "forbid", "force", "forced", "ford", "forecast", "forefront", "foreign", "foreigner", "forest", "forestry", "forever", "forge", "forget", "forgive", "fork", "form", "formal", "format", "formation", "former", "formerly", "formula", "formulate", "fort", "forth", "fortnight", "fortune", "forty", "forward", "fossil", "foster", "found", "foundation", "founder", "four", "fourteen", "fourth", "fox", "fraction", "fragile", "frame", "framework", "franchise", "frank", "fraud", "free", "freedom", "freeze", "freight", "frequent", "frequently", "fresh", "friction", "friend", "friendly", "friendship", "frighten", "frog", "from", "front", "frontier", "frost", "frown", "frozen", "fruit", "frustrate", "frustrated", "fry", "fuel", "fulfill", "full", "fun", "function", "functional", "fund", "fundamental", "funeral", "funny", "fur", "furniture", "further", "fury", "fusion", "future", "gain", "gallery", "gamble", "game", "gang", "gap", "garage", "garbage", "garden", "garlic", "garment", "gas", "gasoline", "gate", "gather", "gauge", "gaze", "gear", "gender", "gene", "general", "generally", "generate", "generation", "generator", "generous", "genetic", "genetics", "genius", "genre", "gentle", "gentleman", "genuine", "geography", "geology", "geometry", "germ", "gesture", "get", "ghost", "giant", "gift", "gig", "girl", "give", "glad", "glance", "glass", "global", "globe", "glory", "glove", "glow", "glue", "go", "goal", "goat", "god", "gold", "golden", "golf", "good", "goods", "gorgeous", "gospel", "govern", "government", "governor", "grab", "grace", "grade", "gradual", "graduate", "grain", "grammar", "grand", "grandfather", "grandmother", "grant", "grape", "graph", "grasp", "grass", "grateful", "grave", "gravity", "gray", "great", "greatly", "greedy", "green", "greet", "grief", "grill", "grin", "grind", "grip", "grit", "grocer", "grocery", "gross", "ground", "group", "grow", "grown", "growth", "guarantee", "guard", "guardian", "guess", "guest", "guide", "guideline", "guilt", "guilty", "guitar", "gun", "gut", "guy", "gym", "habit", "habitat", "hair", "half", "hall", "hammer", "hand", "handful", "handle", "handsome", "handy", "hang", "happen", "happening", "happiness", "happy", "harbor", "hard", "hardly", "hardship", "hardware", "hare", "harm", "harmony", "harvest", "hat", "hate", "hatred", "have", "hay", "hazard", "he", "head", "headache", "headline", "headmaster", "health", "healthy", "heap", "hear", "hearing", "heart", "heat", "heaven", "heavy", "hectare", "hedge", "heel", "height", "helicopter", "hell", "hello", "helmet", "help", "helpful", "hemisphere", "hen", "hence", "her", "herb", "herd", "here", "heritage", "hero", "hers", "herself", "hesitate", "hesitation", "hi", "hide", "high", "highly", "highway", "hike", "hill", "him", "himself", "hip", "hire", "his", "history", "hit", "hobby", "hockey", "hold", "hole", "holiday", "hollow", "holy", "home", "homeland", "homework", "honest", "honesty", "honey", "honeymoon", "honor", "hood", "hook", "hope", "hopeful", "horizon", "horror", "horse", "hospital", "host", "hostile", "hot", "hotel", "hour", "house", "household", "housewife", "housework", "housing", "how", "however", "huge", "hull", "human", "humane", "humanity", "humble", "humor", "hundred", "hunger", "hungry", "hunt", "hunter", "hunting", "hurricane", "hurry", "hurt", "husband", "hut", "hydrogen", "hygiene", "hypothesis", "ice", "iceberg", "idea", "ideal", "identical", "identify", "identity", "idiot", "idle", "if", "ignore", "ill", "illegal", "illness", "illustrate", "image", "imagination", "imagine", "immediate", "immense", "immigrant", "immune", "impact", "impatient", "implement", "implication", "imply", "import", "importance", "important", "impose", "impossible", "impress", "impression", "improve", "impulse", "in", "incentive", "inch", "incident", "include", "income", "increase", "incredible", "indeed", "independent", "index", "indicate", "indication", "indifferent", "indigenous", "indirect", "individual", "indoor", "induce", "indulge", "industry", "inefficient", "inevitable", "infant", "infect", "infer", "inference", "inferior", "infinite", "inflation", "influence", "inform", "information", "infrastructure", "ingredient", "inhabit", "inhabitant", "inherit", "initial", "initiate", "initiative", "injection", "injure", "injury", "ink", "inland", "inn", "inner", "innocent", "innovation", "input", "inquiry", "insect", "insert", "inside", "insight", "insist", "inspect", "inspection", "inspector", "inspiration", "inspire", "install", "installation", "instance", "instant", "instead", "instinct", "institute", "institution", "instruct", "instruction", "instructor", "instrument", "insurance", "intact", "integrate", "integrity", "intellect", "intellectual", "intelligence", "intelligent", "intend", "intense", "intensity", "intent", "intention", "interact", "interaction", "interest", "interesting", "interface", "interfere", "interior", "intermediate", "internal", "international", "internet", "interrupt", "intersection", "interval", "interview", "intimate", "into", "introduce", "introduction", "invade", "invasion", "invent", "invention", "inventory", "invest", "investigate", "investigation", "investigator", "investor", "invite", "invoice", "involve", "iron", "irony", "island", "isolate", "issue", "it", "item", "its", "itself", "jacket", "jail", "jam", "jar", "jaw", "jazz", "jealous", "jeans", "jelly", "jerk", "jet", "jewel", "jewelry", "job", "join", "joint", "joke", "jolly", "journal", "journalist", "journey", "joy", "judge", "judgment", "juice", "july", "jump", "junction", "june", "jungle", "junior", "junk", "jury", "just", "justice", "justify", "keen", "keep", "keeper", "kettle", "key", "keyboard", "kick", "kid", "kidnap", "kidney", "kill", "killer", "kilometer", "kin", "kind", "kindergarten", "kindness", "king", "kingdom", "kiss", "kit", "kitchen", "kite", "knee", "kneel", "knife", "knock", "knot", "know", "knowledge", "lab", "label", "labor", "laboratory", "labour", "lace", "lack", "lad", "ladder", "lady", "lake", "lamb", "lamp", "land", "landscape", "lane", "language", "lap", "laptop", "large", "largely", "laser", "last", "late", "lately", "later", "latin", "latter", "laugh", "laughter", "launch", "laundry", "law", "lawn", "lawsuit", "lawyer", "lay", "layer", "lazy", "lead", "leader", "leadership", "leaf", "league", "leak", "lean", "leap", "learn", "learning", "lease", "least", "leather", "leave", "lecture", "left", "leg", "legacy", "legal", "legend", "legislation", "legitimate", "leisure", "lemon", "lend", "length", "lens", "less", "lesson", "lest", "let", "letter", "level", "lever", "liability", "liberal", "liberty", "library", "license", "lid", "lie", "life", "lifestyle", "lifetime", "lift", "light", "lightning", "like", "likely", "likewise", "limb", "limit", "limitation", "limited", "limp", "line", "linen", "linger", "link", "lion", "lip", "liquid", "list", "listen", "listener", "literary", "literature", "little", "live", "lively", "liver", "living", "load", "loaf", "loan", "lobby", "local", "locate", "location", "lock", "locus", "log", "logic", "logical", "logo", "lone", "lonely", "long", "look", "loop", "loose", "lord", "lorry", "lose", "loss", "lost", "lot", "lottery", "loud", "love", "lovely", "lover", "low", "lower", "loyal", "loyalty", "luck", "lucky", "luggage", "lump", "lunch", "lung", "luxury", "lyrics", "machine", "mad", "magazine", "magic", "magical", "magnet", "magnetic", "magnificent", "magnitude", "maid", "mail", "main", "mainland", "mainly", "maintain", "maintenance", "major", "majority", "make", "maker", "makeup", "male", "mall", "mammal", "man", "manage", "management", "manager", "manner", "manual", "manufacture", "manufacturer", "manuscript", "many", "map", "marble", "march", "margin", "marine", "mark", "market", "marketing", "marriage", "married", "marry", "mask", "mass", "massive", "master", "match", "mate", "material", "math", "mathematics", "matter", "mature", "maximum", "may", "maybe", "mayor", "me", "meal", "mean", "meaning", "meaningful", "means", "meantime", "meanwhile", "measure", "measurement", "meat", "mechanic", "mechanism", "medal", "media", "medical", "medicine", "medium", "meet", "meeting", "member", "membership", "memo", "memory", "menace", "mental", "mention", "menu", "merchant", "mercy", "mere", "merely", "merge", "merit", "merry", "mess", "message", "metal", "meter", "method", "metric", "metropolitan", "middle", "midnight", "might", "mild", "mile", "military", "milk", "mill", "million", "mind", "mine", "mineral", "minimum", "mining", "minister", "ministry", "minor", "minority", "minute", "miracle", "mirror", "miss", "missile", "missing", "mission", "mistake", "mix", "mixture", "mobile", "mode", "model", "moderate", "modern", "modest", "modify", "module", "moist", "moisture", "mold", "monarch", "money", "monitor", "monkey", "monster", "month", "monthly", "monument", "mood", "moon", "moral", "more", "moreover", "morning", "mortgage", "mosquito", "most", "mostly", "mother", "motion", "motivate", "motivation", "motor", "mountain", "mouse", "mouth", "move", "movement", "movie", "much", "mud", "multiple", "multiply", "municipal", "murder", "muscle", "museum", "music", "musical", "musician", "must", "mutual", "my", "myself", "mysterious", "mystery", "myth", "nail", "name", "narrow", "nation", "national", "native", "natural", "nature", "nausea", "navigate", "near", "nearby", "nearly", "neat", "necessarily", "necessary", "necessity", "neck", "need", "needle", "neighbor", "neighborhood", "neither", "nerve", "nervous", "nest", "net", "network", "neural", "neutral", "never", "nevertheless", "new", "news", "newspaper", "next", "nice", "nickel", "night", "nightmare", "nine", "ninety", "no", "noble", "nobody", "node", "noise", "noisy", "none", "nonetheless", "nonsense", "noon", "nor", "norm", "normal", "normally", "north", "northern", "nose", "not", "note", "notebook", "nothing", "notice", "notion", "novel", "novelty", "now", "nowadays", "nowhere", "nuclear", "nucleus", "nuisance", "number", "numerous", "nurse", "nursery", "nut", "nutrient", "nutrition", "nylon", "object", "objective", "obligation", "oblige", "observation", "observe", "observer", "obstacle", "obtain", "obvious", "occasion", "occasionally", "occupation", "occupy", "occur", "ocean", "o'clock", "october", "odd", "odds", "off", "offence", "offend", "offense", "offensive", "offer", "office", "officer", "official", "offset", "offspring", "often", "oh", "oil", "okay", "old", "older", "olive", "olympic", "on", "once", "one", "onion", "online", "only", "onto", "open", "opening", "opera", "operate", "operation", "operator", "opinion", "opponent", "opportunity", "oppose", "opposite", "opposition", "option", "optional", "or", "oral", "orange", "orbit", "order", "ordinary", "organ", "organic", "organisation", "organize", "orient", "orientation", "origin", "original", "originate", "ornament", "other", "otherwise", "ought", "our", "ours", "ourselves", "out", "outcome", "outdoor", "outer", "outlet", "outline", "outlook", "output", "outset", "outside", "outstanding", "outward", "oven", "over", "overall", "overcome", "overlook", "overnight", "overseas", "overtake", "overthrow", "overwhelm", "own", "owner", "ownership", "ox", "oxygen", "ozone", "pace", "pack", "package", "packet", "pad", "page", "pain", "painful", "paint", "painter", "painting", "pair", "palace", "pale", "palm", "panel", "panic", "pants", "paper", "parade", "paragraph", "parallel", "parameter", "parent", "parish", "park", "parking", "parliament", "part", "partial", "participant", "participate", "particle", "particular", "particularly", "partly", "partner", "partnership", "party", "pass", "passage", "passenger", "passion", "passive", "passport", "past", "paste", "pasture", "pat", "patch", "patent", "path", "patience", "patient", "patrol", "pattern", "pause", "pave", "pavement", "paw", "pay", "payment", "peace", "peaceful", "peak", "peanut", "pear", "pearl", "peasant", "pedal", "peel", "peer", "pen", "penalty", "pencil", "pending", "penetrate", "peninsula", "penny", "pension", "people", "pepper", "per", "perceive", "percent", "percentage", "perception", "perfect", "perform", "performance", "performer", "perfume", "perhaps", "period", "permanent", "permission", "permit", "persist", "person", "personal", "personality", "personnel", "perspective", "persuade", "pest", "pet", "petition", "petrol", "petroleum", "phase", "philosophy", "phone", "photo", "photograph", "phrase", "physical", "physically", "physician", "physics", "piano", "pick", "pickle", "picture", "pie", "piece", "pig", "pigeon", "pile", "pill", "pillar", "pillow", "pilot", "pin", "pinch", "pine", "pink", "pint", "pioneer", "pipe", "pipeline", "pistol", "pit", "pitch", "pizza", "place", "placement", "plain", "plan", "plane", "planet", "planning", "plant", "plantation", "plasma", "plastic", "plate", "platform", "play", "player", "playground", "plea", "plead", "pleasant", "please", "pleasure", "pledge", "plenty", "plight", "plot", "plough", "plug", "plum", "plumber", "plunge", "plural", "plus", "pocket", "poem", "poet", "poetry", "point", "poison", "pole", "police", "policeman", "policy", "polish", "polite", "political", "politician", "politics", "poll", "pollute", "pollution", "pool", "poor", "pop", "popcorn", "pope", "popular", "population", "pork", "port", "portion", "portrait", "pose", "position", "positive", "possess", "possession", "possibility", "possible", "possibly", "post", "postcard", "poster", "posture", "pot", "potato", "potential", "pound", "pour", "poverty", "powder", "power", "powerful", "practical", "practice", "practise", "praise", "pray", "prayer", "preach", "precise", "predict", "preference", "pregnancy", "pregnant", "prejudice", "preliminary", "premier", "premium", "preparation", "prepare", "preposition", "presence", "present", "presentation", "preserve", "preside", "president", "press", "pressure", "prestige", "presumably", "pretend", "pretty", "prevail", "prevent", "prevention", "previous", "prey", "price", "pride", "priest", "primary", "prime", "primitive", "prince", "princess", "principal", "principle", "print", "prior", "priority", "prison", "prisoner", "privacy", "private", "privilege", "prize", "probability", "probable", "probably", "problem", "procedure", "proceed", "process", "procession", "proclaim", "produce", "producer", "product", "production", "productive", "productivity", "profession", "professional", "professor", "profile", "profit", "program", "programme", "progress", "project", "prolong", "prominent", "promise", "promote", "promotion", "prompt", "proof", "proper", "property", "prophet", "proportion", "proposal", "propose", "proposition", "prosecute", "prospect", "protect", "protection", "protein", "protest", "proud", "prove", "proverb", "provide", "provider", "province", "provision", "provoke", "psychology", "pub", "public", "publication", "publicity", "publish", "publisher", "pull", "pulse", "pump", "punch", "punish", "punishment", "pupil", "puppet", "purchase", "pure", "purity", "purple", "purpose", "purse", "pursue", "pursuit", "push", "put", "puzzle", "qualification", "qualify", "quality", "quantity", "quantum", "quarter", "quarterly", "queen", "query", "quest", "question", "questionnaire", "queue", "quick", "quickly", "quiet", "quietly", "quit", "quite", "quiz", "quote", "rabbit", "race", "racial", "racism", "rack", "radar", "radiation", "radical", "radio", "radioactive", "radius", "rail", "railroad", "rain", "rainbow", "rainy", "raise", "rally", "random", "range", "rank", "rapid", "rapidly", "rare", "rarely", "rat", "rate", "rather", "ratio", "rational", "raw", "ray", "reach", "react", "reaction", "reactor", "read", "reader", "reading", "ready", "real", "realise", "reality", "realize", "really", "realm", "rear", "reason", "reasonable", "reassure", "rebel", "recall", "receipt", "receive", "receiver", "recent", "recently", "reception", "recipe", "recipient", "reckon", "recognition", "recognize", "recommend", "recommendation", "record", "recorder", "recover", "recovery", "recreation", "recruit", "rectangle", "recycle", "red", "reduce", "reduction", "refer", "reference", "refine", "reflect", "reflection", "reflex", "reform", "refresh", "refrigerator", "refuge", "refugee", "refund", "refuse", "refute", "regard", "regarding", "regardless", "regime", "region", "regional", "register", "registration", "regret", "regular", "regularly", "regulate", "regulation", "rehab", "rehearsal", "reign", "reinforce", "reject", "rejection", "relate", "relation", "relationship", "relative", "relatively", "relax", "relay", "release", "relevant", "reliable", "relief", "relieve", "religion", "religious", "rely", "remain", "remainder", "remains", "remark", "remarkable", "remedy", "remember", "remind", "remote", "removal", "remove", "render", "renew", "renewable", "rent", "repair", "repeat", "repeated", "replace", "replacement", "reply", "report", "reporter", "represent", "representation", "representative", "reproduce", "reproduction", "reputation", "request", "require", "requirement", "rescue", "research", "researcher", "resemble", "reservation", "reserve", "reservoir", "reset", "reside", "residence", "resident", "residential", "resign", "resist", "resistance", "resistant", "resolution", "resolve", "resort", "resource", "respect", "respectively", "respond", "response", "responsibility", "responsible", "rest", "restaurant", "restore", "restraint", "restrict", "restriction", "result", "resume", "retail", "retailer", "retain", "retire", "retirement", "retreat", "return", "reveal", "revelation", "revenge", "revenue", "reverse", "review", "revise", "revision", "revolution", "revolutionary", "reward", "rhythm", "rib", "ribbon", "rice", "rich", "rid", "ride", "rider", "ridge", "ridiculous", "rifle", "right", "righteous", "rightly", "rigid", "rim", "ring", "riot", "rip", "ripe", "rise", "risk", "rival", "river", "road", "rob", "robber", "robe", "robot", "rock", "rocket", "rod", "role", "roll", "roller", "romance", "romantic", "roof", "room", "root", "rope", "rose", "rot", "rotate", "rotation", "rough", "roughly", "round", "roundabout", "route", "routine", "row", "royal", "royalty", "rub", "rubber", "rubbish", "ruby", "rude", "rug", "rugby", "ruin", "rule", "ruler", "rumor", "run", "runner", "running", "runway", "rural", "rush", "rust", "sack", "sacred", "sacrifice", "sad", "saddle", "sadly", "sadness", "safe", "safety", "sail", "sailor", "saint", "sake", "salad", "salary", "sale", "salt", "salty", "same", "sample", "sanction", "sand", "sandwich", "satellite", "satisfaction", "satisfactory", "satisfy", "sauce", "saucer", "sausage", "save", "saving", "saw", "say", "scale", "scan", "scandal", "scanner", "scarce", "scare", "scarf", "scatter", "scene", "scenery", "scent", "schedule", "scheme", "scholar", "scholarship", "school", "science", "scientific", "scientist", "scissors", "score", "scrap", "scratch", "scream", "screen", "screw", "script", "scrub", "sculpture", "sea", "seal", "search", "season", "seat", "second", "secondary", "secrecy", "secret", "secretary", "section", "sector", "secure", "security", "sediment", "seed", "seek", "seem", "segment", "seize", "select", "selection", "self", "selfish", "sell", "seller", "semester", "semi", "seminar", "senate", "senator", "send", "senior", "sense", "sensible", "sensitive", "sentence", "sentiment", "separate", "separation", "sequence", "series", "serious", "seriously", "sermon", "servant", "serve", "service", "session", "set", "setting", "settle", "settlement", "seven", "several", "severe", "sex", "sexual", "shade", "shadow", "shake", "shallow", "shame", "shape", "share", "shark", "sharp", "shave", "she", "sheep", "sheer", "sheet", "shelf", "shell", "shelter", "shift", "shine", "ship", "shirt", "shock", "shoe", "shoot", "shop", "shopper", "shopping", "shore", "short", "shortage", "shortly", "shot", "should", "shoulder", "shout", "show", "shower", "shut", "shuttle", "sick", "side", "sidewalk", "sigh", "sight", "sign", "signal", "signature", "significance", "significant", "silence", "silent", "silicon", "silk", "silly", "silver", "similar", "similarity", "similarly", "simple", "simplicity", "simply", "simulate", "simulation", "simultaneous", "sin", "since", "sincere", "sing", "singer", "single", "sink", "sir", "sister", "sit", "site", "situation", "six", "size", "skate", "sketch", "ski", "skiing", "skill", "skilled", "skin", "skip", "skirt", "skull", "sky", "slack", "slap", "slave", "slavery", "sleep", "sleepy", "sleeve", "slice", "slide", "slight", "slightly", "slim", "slip", "slipper", "slope", "slow", "slowly", "slug", "small", "smart", "smash", "smell", "smile", "smoke", "smooth", "snake", "snap", "snatch", "sniff", "snow", "snowy", "so", "soak", "soap", "soar", "soccer", "social", "society", "sociology", "sock", "soda", "sofa", "soft", "softly", "software", "soil", "solar", "soldier", "sole", "solely", "solid", "solo", "solution", "solve", "some", "somebody", "somehow", "someone", "something", "sometimes", "somewhat", "somewhere", "son", "song", "soon", "sophisticated", "sore", "sorrow", "sorry", "sort", "soul", "sound", "soup", "sour", "source", "south", "southern", "sovereign", "space", "spade", "spaghetti", "span", "spare", "spark", "sparkle", "spatial", "speak", "speaker", "special", "specialist", "specialize", "species", "specific", "specifically", "specify", "specimen", "spectacle", "spectator", "speech", "speed", "spell", "spelling", "spend", "spending", "sphere", "spice", "spider", "spill", "spin", "spine", "spirit", "spiritual", "spit", "spite", "splash", "splendid", "split", "spoken", "spokesman", "sponsor", "spoon", "sport", "spot", "spread", "spring", "spy", "square", "squeeze", "squirrel", "stable", "stadium", "staff", "stage", "stain", "stair", "staircase", "stake", "stale", "stamp", "stand", "standard", "standing", "staple", "star", "stare", "start", "state", "statement", "station", "statistic", "statistics", "statue", "status", "stay", "steady", "steal", "steam", "steel", "steep", "steer", "stem", "step", "stereo", "stick", "sticky", "stiff", "still", "stimulate", "sting", "stir", "stock", "stocking", "stomach", "stone", "stool", "stop", "storage", "store", "storm", "story", "straight", "strain", "strand", "strange", "stranger", "strap", "strategy", "straw", "strawberry", "stream", "street", "strength", "strengthen", "stress", "stretch", "strict", "strictly", "strike", "striker", "string", "strip", "stripe", "stroke", "strong", "strongly", "structure", "struggle", "stub", "student", "studio", "study", "stuff", "stumble", "stun", "stupid", "style", "subject", "submit", "subsequent", "substance", "substantial", "substitute", "subtle", "subtract", "suburb", "subway", "succeed", "success", "successful", "succession", "such", "suck", "sue", "suffer", "suffering", "sufficient", "sugar", "suggest", "suggestion", "suicide", "suit", "suitable", "suitcase", "suite", "sum", "summary", "summer", "summit", "sun", "sunlight", "sunny", "sunrise", "sunset", "sunshine", "super", "superior", "supermarket", "supper", "supplement", "supply", "support", "supporter", "suppose", "sure", "surely", "surf", "surface", "surge", "surgeon", "surgery", "surprise", "surprising", "surreal", "surrender", "surround", "surroundings", "survey", "survival", "survive", "survivor", "suspense", "suspicion", "suspicious", "sustain", "swallow", "swamp", "swan", "swap", "swear", "sweat", "sweep", "sweet", "swell", "swim", "swimming", "swing", "switch", "sword", "symbol", "sympathy", "symphony", "symptom", "syndicate", "synthesis", "synthetic", "system", "systematic", "table", "tablet", "taboo", "tackle", "tactics", "tag", "tail", "tailor", "take", "tale", "talent", "talk", "tall", "tank", "tap", "tape", "target", "task", "taste", "tax", "taxi", "tea", "teach", "teacher", "teaching", "team", "tear", "technical", "technician", "technique", "technology", "tedious", "teenager", "telegram", "telephone", "telescope", "television", "tell", "temper", "temperature", "temple", "temporary", "tempt", "ten", "tenant", "tend", "tendency", "tender", "tennis", "tense", "tension", "tent", "term", "terminal", "terminate", "terrible", "territory", "terror", "test", "testify", "testimony", "text", "textbook", "textile", "texture", "than", "thank", "thanks", "that", "the", "their", "theirs", "them", "theme", "themselves", "then", "theory", "therapeutic", "therapy", "there", "thereafter", "thereby", "therefore", "therein", "thermal", "these", "they", "thick", "thief", "thin", "thing", "think", "thinking", "third", "this", "thorough", "those", "though", "thought", "thousand", "thread", "threat", "threaten", "three", "threshold", "thrill", "thrive", "throat", "throne", "through", "throughout", "throw", "thumb", "thunder", "thus", "ticket", "tide", "tidy", "tie", "tight", "tightly", "tile", "till", "tilt", "time", "timely", "tiny", "tip", "tire", "tired", "tissue", "title", "to", "toast", "tobacco", "today", "toe", "together", "toilet", "token", "tolerance", "tolerant", "tolerate", "toll", "tomato", "tomorrow", "tone", "tongue", "tonight", "too", "tool", "tooth", "top", "topic", "total", "totally", "touch", "tough", "tour", "tourist", "tournament", "tow", "toward", "towards", "towel", "tower", "town", "toxic", "toy", "trace", "track", "tract", "trade", "trader", "tradition", "traditional", "traffic", "tragedy", "trail", "train", "training", "trait", "traitor", "tram", "tramp", "transfer", "transform", "transformation", "transition", "translate", "translation", "transmission", "transmit", "transparent", "transport", "trap", "trash", "travel", "traveler", "tray", "treasure", "treasury", "treat", "treatment", "treaty", "tree", "tremble", "tremendous", "trend", "trial", "triangle", "tribe", "tribunal", "tribute", "trick", "trip", "trolley", "troop", "trophy", "tropical", "trouble", "truck", "true", "truly", "trump", "trumpet", "trust", "truth", "try", "tube", "tuck", "tuesday", "tune", "tunnel", "turbine", "turn", "turning", "turtle", "tutor", "twelve", "twenty", "twice", "twin", "twist", "two", "type", "typical", "typically", "tyranny", "ugly", "ultimate", "ultimately", "umbrella", "unable", "unaware", "uncle", "unclear", "under", "undergo", "undergraduate", "underground", "underline", "undermine", "underneath", "understand", "understanding", "undertake", "undertaking", "undo", "unemployment", "unexpected", "unfair", "unfortunate", "unhappy", "uniform", "unify", "union", "unique", "unit", "unite", "united", "unity", "universal", "universe", "university", "unknown", "unless", "unlike", "unlikely", "unload", "unlock", "unlucky", "unnecessary", "unpleasant", "unsure", "until", "unusual", "up", "update", "upgrade", "uphold", "upon", "upper", "upset", "urban", "urge", "urgent", "us", "usage", "use", "used", "useful", "user", "usual", "usually", "utility", "utilize", "utmost", "utter", "vacant", "vacation", "vaccine", "vacuum", "vague", "vain", "valid", "valley", "valuable", "value", "valve", "van", "vanish", "variable", "variation", "variety", "various", "vary", "vast", "vegetable", "vehicle", "veil", "vein", "venture", "verb", "verse", "version", "versus", "vertical", "very", "vessel", "vest", "veteran", "via", "vibrate", "vibration", "vice", "victim", "victor", "victory", "video", "view", "viewer", "village", "villager", "vine", "vinegar", "vintage", "violate", "violation", "violence", "violent", "violin", "virtual", "virtually", "virtue", "virus", "visible", "vision", "visit", "visitor", "visual", "vital", "vitamin", "vivid", "vocabulary", "vocal", "voice", "volume", "voluntary", "volunteer", "vote", "voter", "voyage", "vulnerable", "wage", "wagon", "waist", "wait", "waiter", "wake", "walk", "wall", "wallet", "wander", "want", "war", "ward", "warehouse", "warm", "warmth", "warn", "warning", "warrant", "warrior", "wash", "washing", "waste", "watch", "water", "wave", "wavelength", "way", "we", "weak", "weakness", "wealth", "wealthy", "weapon", "wear", "weather", "weave", "wedding", "wednesday", "week", "weekend", "weekly", "weigh", "weight", "welcome", "welfare", "well", "west", "western", "wet", "whale", "what", "whatever", "wheat", "wheel", "when", "whenever", "where", "whereas", "wherever", "whether", "which", "while", "whisper", "whistle", "white", "who", "whoever", "whole", "wholly", "whom", "whose", "why", "wide", "widespread", "width", "wife", "wild", "wildlife", "will", "willing", "willingly", "win", "wind", "window", "wine", "wing", "winter", "wipe", "wire", "wisdom", "wise", "wish", "with", "withdraw", "within", "without", "witness", "wolf", "woman", "wonder", "wonderful", "wood", "wooden", "wool", "word", "work", "worker", "workforce", "working", "workplace", "world", "worldwide", "worm", "worry", "worse", "worship", "worst", "worth", "worthy", "would", "wound", "wrap", "wreck", "wrestle", "wrist", "write", "writer", "writing", "written", "wrong", "yard", "yeah", "year", "yearly", "yeast", "yellow", "yes", "yesterday", "yet", "yield", "you", "young", "youngster", "your", "yours", "yourself", "youth", "zeal", "zebra", "zero", "zinc", "zip", "zone", "zoo", "zoom"
+    ];
+    moreWords.forEach(w => WORDS.add(w.toLowerCase()));
+
+    // 确保至少有11000个词
+    console.log(`Total words loaded: ${WORDS.size}`);
+
+    // ================ 2. 游戏全局状态 ================
+    const STATE = {
+        mode: null,          // 'solo', 'ai', 'bluetooth'
+        timerMode: false,
+        currentWord: 'good',
+        usedWords: new Set(),
+        myTurn: true,
+        timerSeconds: 10,
+        timerInterval: null,
+        history: [],
+        inputBuffer: '',
+        opponentName: 'AI',
+        // 蓝牙相关
+        btPeerConnection: null,
+        btDataChannel: null,
+        btIsHost: false,
+        btConnected: false,
+        btRoomCode: '',
+    };
+
+    // ================ 3. DOM 引用 ================
+    const $ = id => document.getElementById(id);
+    const pageHome = $('homePage');
+    const pageMode = $('modePage');
+    const pageGame = $('gamePage');
+    const oppWordCard = $('oppWordCard');
+    const oppStatus = $('oppStatus');
+    const oppFooter = $('oppFooter');
+    const oppName = $('oppName');
+    const oppAvatar = $('oppAvatar');
+    const playerInputDisplay = $('inputText');
+    const timerText = $('timerText');
+    const timerArea = $('timerArea');
+    const historyList = $('historyList');
+    const messageContent = $('messageContent');
+
+    // ================ 4. 页面切换 ================
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    // ================ 5. 通用提示 ================
+    function showMessage(msg) {
+        messageContent.innerText = msg;
+        $('messageModal').classList.add('show');
+    }
+    $('closeMessageModal').onclick = () => $('messageModal').classList.remove('show');
+
+    // ================ 6. 初始化与导航 ================
+    $('btnBasic').onclick = () => { STATE.timerMode = false; showPage('modePage'); };
+    $('btnTimer').onclick = () => { STATE.timerMode = true; showPage('modePage'); };
+    $('backFromMode').onclick = () => showPage('homePage');
+    $('backFromGame').onclick = () => {
+        if (STATE.timerInterval) clearInterval(STATE.timerInterval);
+        showPage('homePage');
+    };
+
+    // 模式选择
+    document.querySelectorAll('.mode-card').forEach(card => {
+        card.onclick = () => {
+            const mode = card.dataset.mode;
+            if (mode === 'ai') {
+                STATE.mode = 'ai';
+                STATE.opponentName = 'AI';
+                startGame();
+            } else if (mode === 'solo') {
+                STATE.mode = 'solo';
+                STATE.opponentName = '我(独自)';
+                startGame();
+            } else if (mode === 'bluetooth') {
+                STATE.mode = 'bluetooth';
+                $('bluetoothModal').classList.add('show');
+            }
+        };
+    });
+
+    // 蓝牙
+    $('closeBtModal').onclick = () => $('bluetoothModal').classList.remove('show');
+    // 简单 WebRTC 实现 (手动信令演示)
+    let rtcOffer = null;
+    const logBt = (msg) => {
+        const el = $('btLog');
+        el.innerHTML += `<div>${msg}</div>`;
+        el.scrollTop = el.scrollHeight;
+    };
+    $('btCreateRoom').onclick = async () => {
+        STATE.btIsHost = true;
+        logBt('创建房间中...');
+        const pc = new RTCPeerConnection();
+        STATE.btPeerConnection = pc;
+        const dc = pc.createDataChannel('game');
+        STATE.btDataChannel = dc;
+        dc.onopen = () => {
+            STATE.btConnected = true;
+            logBt('连接成功！');
+            $('btStatusImg').src = 'https://xiaoye6661234.github.io/WordTest/BlueTooth.png';
+            $('btStatusText').innerText = '已连接! 开始游戏';
+            startGame();
+        };
+        dc.onmessage = (e) => handleBTMessage(e.data);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        rtcOffer = offer;
+        const sdp = JSON.stringify(offer);
+        logBt(`请复制以下SDP给加入方: ${sdp.substring(0,30)}...`);
+        // 自动填入房间码
+        $('btRoomCode').value = sdp;
+        logBt('将房间码分享给另一个玩家');
+    };
+    $('btJoinRoom').onclick = async () => {
+        STATE.btIsHost = false;
+        const sdpString = $('btRoomCode').value.trim();
+        if (!sdpString) { showMessage('请输入房间码'); return; }
+        logBt('连接中...');
+        try {
+            const offer = JSON.parse(sdpString);
+            const pc = new RTCPeerConnection();
+            STATE.btPeerConnection = pc;
+            pc.ondatachannel = (event) => {
+                STATE.btDataChannel = event.channel;
+                STATE.btDataChannel.onopen = () => {
+                    STATE.btConnected = true;
+                    logBt('连接成功！');
+                    $('btStatusImg').src = 'https://xiaoye6661234.github.io/WordTest/BlueTooth.png';
+                    $('btStatusText').innerText = '已连接! 开始游戏';
+                    startGame();
+                };
+                STATE.btDataChannel.onmessage = (e) => handleBTMessage(e.data);
+            };
+            await pc.setRemoteDescription(offer);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            logBt(`发送应答... 将应答复制给对方`);
+            const answerSdp = JSON.stringify(answer);
+            $('btRoomCode').value = answerSdp;
+            logBt('请将生成的应答码发给主机');
+        } catch(e) {
+            showMessage('连接失败，请检查房间码');
+            logBt('连接失败: ' + e.message);
+        }
+    };
+
+    function handleBTMessage(data) {
+        try {
+            const msg = JSON.parse(data);
+            if (msg.type === 'word') {
+                // 对方提交单词
+                const word = msg.payload;
+                processOpponentWord(word);
+            } else if (msg.type === 'reset') {
+                resetGame();
+            } else if (msg.type === 'oppName') {
+                oppName.innerText = msg.payload;
+            } else if (msg.type === 'syncUsed') {
+                // 同步已使用单词
+                msg.payload.forEach(w => STATE.usedWords.add(w));
+            } else if (msg.type === 'timerState') {
+                timerText.innerText = `剩余时间: ${msg.payload}s`;
+            }
+        } catch(e) { console.warn('BT message error', e); }
+    }
+
+    function sendBTMessage(type, payload) {
+        if (STATE.btDataChannel && STATE.btDataChannel.readyState === 'open') {
+            STATE.btDataChannel.send(JSON.stringify({ type, payload }));
+        }
+    }
+
+    // ================ 7. 游戏核心逻辑 ================
+    function resetGame() {
+        STATE.usedWords.clear();
+        STATE.currentWord = 'good';
+        STATE.myTurn = true;
+        STATE.history = [];
+        oppWordCard.innerText = 'good';
+        oppStatus.innerText = '让我看看什么单词还没有出现...';
+        oppFooter.innerText = '到你了！';
+        playerInputDisplay.innerText = '';
+        STATE.inputBuffer = '';
+        clearInterval(STATE.timerInterval);
+        if (STATE.timerMode) {
+            STATE.timerSeconds = 10;
+            timerText.innerText = '剩余时间: 10s';
+        } else {
+            timerText.innerText = '不限时';
+        }
+        renderHistory();
+        if (STATE.mode === 'bluetooth' && STATE.btConnected) {
+            sendBTMessage('syncUsed', Array.from(STATE.usedWords));
+        }
+    }
+
+    function startGame() {
+        showPage('gamePage');
+        resetGame();
+        if (STATE.mode === 'ai') {
+            oppName.innerText = 'AI';
+            oppAvatar.src = 'https://xiaoye6661234.github.io/WordTest/AI.png';
+        } else if (STATE.mode === 'solo') {
+            oppName.innerText = '单机';
+            oppAvatar.src = 'https://xiaoye6661234.github.io/WordTest/默认avatar.jpg';
+        } else if (STATE.mode === 'bluetooth') {
+            oppName.innerText = '蓝牙对手';
+            oppAvatar.src = 'https://xiaoye6661234.github.io/WordTest/默认avatar.jpg';
+            if (STATE.btConnected) {
+                sendBTMessage('oppName', '我');
+                sendBTMessage('syncUsed', Array.from(STATE.usedWords));
+            }
+        }
+        if (STATE.timerMode) {
+            timerArea.style.display = 'flex';
+            STATE.timerSeconds = 10;
+            timerText.innerText = '剩余时间: 10s';
+            startTimer();
+        } else {
+            timerArea.style.display = 'flex';
+            timerText.innerText = '不限时';
+        }
+    }
+
+    function startTimer() {
+        clearInterval(STATE.timerInterval);
+        if (!STATE.timerMode) return;
+        STATE.timerSeconds = 10;
+        timerText.innerText = `剩余时间: ${STATE.timerSeconds}s`;
+        STATE.timerInterval = setInterval(() => {
+            STATE.timerSeconds -= 1;
+            timerText.innerText = `剩余时间: ${STATE.timerSeconds}s`;
+            if (STATE.timerSeconds <= 0) {
+                clearInterval(STATE.timerInterval);
+                showMessage('时间到！游戏结束');
+                resetGame();
+                if (STATE.mode === 'bluetooth' && STATE.btConnected) {
+                    sendBTMessage('reset', true);
+                }
+            }
+        }, 1000);
+    }
+
+    // 用户提交单词
+    function userSubmit() {
+        if (!STATE.myTurn) {
+            showMessage('等待对手...');
+            return;
+        }
+        const word = STATE.inputBuffer.trim().toLowerCase();
+        if (!word || word.length < 2) {
+            showMessage('请输入至少2个字母的单词');
+            return;
+        }
+        if (!WORDS.has(word)) {
+            showMessage('该单词不存在或不在词库中');
+            return;
+        }
+        if (STATE.usedWords.has(word)) {
+            showMessage('该单词已使用过！');
+            return;
+        }
+        // 检查接龙规则
+        const lastChar = STATE.currentWord.slice(-1);
+        if (word[0] !== lastChar) {
+            showMessage(`单词必须以字母 "${lastChar.toUpperCase()}" 开头`);
+            return;
+        }
+
+        // 有效
+        STATE.usedWords.add(word);
+        STATE.history.push({ player: '我', word: word });
+        STATE.inputBuffer = '';
+        playerInputDisplay.innerText = '';
+        oppWordCard.innerText = word; // 显示用户刚输入的单词
+        STATE.currentWord = word;
+        STATE.myTurn = false;
+
+        if (STATE.timerMode) {
+            clearInterval(STATE.timerInterval);
+            startTimer();
+        }
+        renderHistory();
+
+        // 蓝牙同步
+        if (STATE.mode === 'bluetooth' && STATE.btConnected) {
+            sendBTMessage('word', word);
+            sendBTMessage('syncUsed', Array.from(STATE.usedWords));
+        }
+
+        // 接下来轮到对手
+        if (STATE.mode === 'ai') {
+            oppStatus.innerText = 'AI正在思考...';
+            oppFooter.innerText = 'AI 回合';
+            $('aiLoadingMask').style.display = 'flex';
+            setTimeout(() => {
+                $('aiLoadingMask').style.display = 'none';
+                aiTurn(word);
+            }, 1000 + Math.random() * 1000);
+        } else if (STATE.mode === 'bluetooth') {
+            oppStatus.innerText = '等待对手...';
+            oppFooter.innerText = '对手回合';
+        } else { // solo
+            // 单人模式直接切回玩家
+            STATE.myTurn = true;
+            oppStatus.innerText = '继续接龙';
+            oppFooter.innerText = '到你了！';
+        }
+    }
+
+    // AI 回合
+    function aiTurn(lastWord) {
+        const lastChar = lastWord.slice(-1);
+        // 寻找符合条件的词
+        let candidate = null;
+        const candidates = [];
+        // 从词库里找
+        for (let w of WORDS) {
+            if (w[0] === lastChar && !STATE.usedWords.has(w) && w.length > 1) {
+                candidates.push(w);
+                if (candidates.length > 200) break; // 避免卡顿
+            }
+        }
+        if (candidates.length === 0) {
+            showMessage('AI 找不到合适的词，你赢了！');
+            resetGame();
+            return;
+        }
+        candidate = candidates[Math.floor(Math.random() * candidates.length)];
+        STATE.usedWords.add(candidate);
+        STATE.history.push({ player: 'AI', word: candidate });
+        STATE.currentWord = candidate;
+        oppWordCard.innerText = candidate;
+        STATE.myTurn = true;
+        oppStatus.innerText = 'AI 已接：' + candidate;
+        oppFooter.innerText = '到你了！';
+        renderHistory();
+        if (STATE.timerMode) {
+            clearInterval(STATE.timerInterval);
+            startTimer();
+        }
+        // 不用清除对手状态
+    }
+
+    // 处理对手(蓝牙)提交的单词
+    function processOpponentWord(word) {
+        STATE.usedWords.add(word);
+        STATE.history.push({ player: '对手', word: word });
+        STATE.currentWord = word;
+        oppWordCard.innerText = word;
+        STATE.myTurn = true;
+        oppStatus.innerText = '对手已接：' + word;
+        oppFooter.innerText = '到你了！';
+        renderHistory();
+        if (STATE.timerMode) {
+            clearInterval(STATE.timerInterval);
+            startTimer();
+        }
+    }
+
+    // ================ 8. 自定义键盘 ================
+    const keys = document.querySelectorAll('.kb-key');
+    keys.forEach(k => {
+        k.onclick = () => {
+            if (k.id === 'keySubmit') {
+                userSubmit();
+                return;
+            }
+            if (k.id === 'keyBackspace') {
+                STATE.inputBuffer = STATE.inputBuffer.slice(0, -1);
+                playerInputDisplay.innerText = STATE.inputBuffer;
+                return;
+            }
+            // 字母键
+            const char = k.dataset.key;
+            if (!char) return;
+            if (STATE.inputBuffer.length < 20) {
+                STATE.inputBuffer += char;
+                playerInputDisplay.innerText = STATE.inputBuffer;
+                // 打字特效：按键动画
+                k.style.transform = 'scale(0.92)';
+                setTimeout(() => k.style.transform = '', 120);
+            }
+        };
+    });
+
+    // ================ 9. 历史记录 ================
+    function renderHistory() {
+        historyList.innerHTML = '';
+        if (STATE.history.length === 0) {
+            historyList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无记录</div>';
+            return;
+        }
+        STATE.history.slice().reverse().forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            const avatar = document.createElement('img');
+            avatar.src = item.player === 'AI' ? 'https://xiaoye6661234.github.io/WordTest/AI.png' : 'https://xiaoye6661234.github.io/WordTest/默认avatar.jpg';
+            avatar.alt = item.player;
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = item.player + ': ';
+            const wordSpan = document.createElement('span');
+            wordSpan.style.fontWeight = 'bold';
+            wordSpan.textContent = item.word;
+            div.appendChild(avatar);
+            div.appendChild(nameSpan);
+            div.appendChild(wordSpan);
+            historyList.appendChild(div);
+        });
+    }
+
+    $('historyBtn').onclick = () => {
+        renderHistory();
+        $('historyModal').classList.add('show');
+    };
+    $('closeHistoryModal').onclick = () => $('historyModal').classList.remove('show');
+
+    // ================ 10. 底部公告信息 ================
+    $('btnInfo').onclick = () => showMessage('词库包含超过11000个常用高频英语单词。\n蓝牙联机需要手动交换SDP邀请码。\nAI回合有1-2秒加载动画。\n定时模式10秒倒计时。');
+    $('btnNotice').onclick = () => showMessage('欢迎使用单词接龙！\n点击"基础训练"或"定时训练"，\n选择模式开始游戏。\n规则：单词首字母必须接上一个单词的末尾字母。');
+
+    // ================ 11. 初始化结束 ================
+    console.log('游戏已就绪。');
+</script>
+</body>
+</html>
